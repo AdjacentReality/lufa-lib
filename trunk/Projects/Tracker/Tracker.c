@@ -80,7 +80,7 @@ int main(void)
 
 	for (;;)
 	{
-		CheckJoystickMovement();
+		CheckButtons();
 
 		/* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
 		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
@@ -101,28 +101,24 @@ void SetupHardware(void)
 	clock_prescale_set(clock_div_1);
 
 	/* Hardware Initialization */
-	Joystick_Init();
+	Buttons_Init();
 	LEDs_Init();
 	USB_Init();
 }
 
-/** Checks for changes in the position of the board joystick, sending strings to the host upon each change. */
-void CheckJoystickMovement(void)
+/** Checks for button presses, sending strings to the host upon each change. */
+void CheckButtons(void)
 {
-	uint8_t     JoyStatus_LCL = Joystick_GetStatus();
+	uint8_t     ButtonsStatus = Buttons_GetStatus();
 	char*       ReportString  = NULL;
 	static bool ActionSent    = false;
 
-	if (JoyStatus_LCL & JOY_UP)
-	  ReportString = "Joystick Up\r\n";
-	else if (JoyStatus_LCL & JOY_DOWN)
-	  ReportString = "Joystick Down\r\n";
-	else if (JoyStatus_LCL & JOY_LEFT)
-	  ReportString = "Joystick Left\r\n";
-	else if (JoyStatus_LCL & JOY_RIGHT)
-	  ReportString = "Joystick Right\r\n";
-	else if (JoyStatus_LCL & JOY_PRESS)
-	  ReportString = "Joystick Pressed\r\n";
+	if (ButtonsStatus & BUTTONS_BUTTON1)
+	  ReportString = "Button 1 Pressed\r\n";
+#ifdef BUTTONS_BUTTON2
+	else if (ButtonsStatus & BUTTONS_BUTTON2)
+	  ReportString = "Button 2 Pressed\r\n";
+#endif
 	else
 	  ActionSent = false;
 
