@@ -71,14 +71,14 @@
 		#if !defined(__DOXYGEN__)
 			static inline void Buttons_Init(void)
 			{
-				DDRF  &= ~(BUTTONS_BUTTON1 & BUTTONS_BUTTON2);
+				DDRF  &= ~(BUTTONS_BUTTON1 | BUTTONS_BUTTON2);
 				PORTF |=  BUTTONS_BUTTON1 | BUTTONS_BUTTON2;
 			}
 
 			static inline void Buttons_Disable(void)
 			{
-				DDRF  &= ~(BUTTONS_BUTTON1 & BUTTONS_BUTTON2);
-				PORTF &= ~(BUTTONS_BUTTON1 & BUTTONS_BUTTON2);
+				DDRF  &= ~(BUTTONS_BUTTON1 | BUTTONS_BUTTON2);
+				PORTF &= ~(BUTTONS_BUTTON1 | BUTTONS_BUTTON2);
 			}
 
 			static inline uint8_t Buttons_GetStatus(void) ATTR_WARN_UNUSED_RESULT;
