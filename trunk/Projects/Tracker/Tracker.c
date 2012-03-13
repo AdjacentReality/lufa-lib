@@ -34,6 +34,9 @@
  */
 
 #include "Tracker.h"
+#include "twi.h"
+#include "l3g.h"
+#include "lsm303.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -64,6 +67,29 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
  */
 static FILE USBSerialStream;
 
+/** Configures the board hardware and chip peripherals for the demo's functionality. */
+void SetupHardware(void)
+{
+	/* Disable watchdog if enabled by bootloader/fuses */
+	MCUSR &= ~(1 << WDRF);
+	wdt_disable();
+
+	/* Disable clock division */
+	clock_prescale_set(clock_div_1);
+
+    twi_init();
+	
+	/* Hardware Initialization */
+	Buttons_Init();
+	LEDs_Init();
+	USB_Init();
+}
+
+void SetupSensors()
+{
+	l3g_init();
+	lsm303_init();
+}
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -78,9 +104,11 @@ int main(void)
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
 	sei();
 
+    SetupSensors();
+
 	for (;;)
 	{
-		CheckButtons();
+		CheckSensors();
 
 		/* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
 		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
@@ -90,48 +118,17 @@ int main(void)
 	}
 }
 
-/** Configures the board hardware and chip peripherals for the demo's functionality. */
-void SetupHardware(void)
+/** Reads the values of the sensors and prints out to USB. */
+void CheckSensors(void)
 {
-	/* Disable watchdog if enabled by bootloader/fuses */
-	MCUSR &= ~(1 << WDRF);
-	wdt_disable();
-
-	/* Disable clock division */
-	clock_prescale_set(clock_div_1);
-
-	/* Hardware Initialization */
-	Buttons_Init();
-	LEDs_Init();
-	USB_Init();
-}
-
-/** Checks for button presses, sending strings to the host upon each change. */
-void CheckButtons(void)
-{
-	uint8_t     ButtonsStatus = Buttons_GetStatus();
-	char*       ReportString  = NULL;
-	static bool ActionSent    = false;
-
-	if (ButtonsStatus & BUTTONS_BUTTON1)
-	  ReportString = "Button 1 Pressed\r\n";
-#ifdef BUTTONS_BUTTON2
-	else if (ButtonsStatus & BUTTONS_BUTTON2)
-	  ReportString = "Button 2 Pressed\r\n";
-#endif
-	else
-	  ActionSent = false;
-
-	if ((ReportString != NULL) && (ActionSent == false))
-	{
-		ActionSent = true;
-
-		/* Write the string to the virtual COM port via the created character stream */
-		fputs(ReportString, &USBSerialStream);
-
-		/* Alternatively, without the stream: */
-		// CDC_Device_SendString(&Tracker_CDC_Interface, ReportString);
-	}
+    short g[3], m[3], a[3];
+    
+    l3g_read(&g[0], &g[1], &g[2]);
+    lsm303_m_read(&m[0], &m[1], &m[2]);
+    lsm303_a_read(&a[0], &a[1], &a[2]);
+    
+    fprintf(&USBSerialStream, "gyro (%d, %d, %d) mag (%d, %d, %d) acc(%d, %d, %d)\n", 
+                              g[0], g[1], g[2], m[0], m[1], m[2], a[0], a[1], a[2]);
 }
 
 /** Event handler for the library USB Connection event. */
