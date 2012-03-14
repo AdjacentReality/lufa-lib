@@ -16,7 +16,7 @@ void l3g_init(void){
 	buf[2] = 0x00;					// CTRL_REG2
 	buf[3] = L3G_H_LACTIVE |	// Active low
 			 L3G_I2_DRDY;		// Enable DRDY interrupt pin on setting of ZYXDA (new data)
-	buf[4] = L3G_FS_2000DPS;	// Scale selection
+	buf[4] = L3G_FS;	// Scale selection
 	buf[5] = 0x00;					// CTRL_REG5
 	
 	twi_write_block(L3G_ADDRESS, buf, 6);

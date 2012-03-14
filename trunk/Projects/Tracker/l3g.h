@@ -52,5 +52,20 @@ void l3g_read(short *x, short *y, short *z);
 //STATUS_REG
 #define L3G_ZYXDA			0x08
 #define L3G_ZYXOR			0x80
+// Sensitivity multiplier in degrees per second per digit
+#define L3G_SO_250DPS       8.75
+#define L3G_SO_500DPS       17.5
+#define L3G_SO_2000DPS      70.0
+
+#define L3G_FS L3G_FS_2000DPS
+
+// #define the scale to allow compile time optimization of floating point math
+#if L3G_FS == L3G_FS_250DPS
+#define L3G_SO L3G_SO_250DPS
+#elif L3G_FS == L3G_FS_500DPS
+#define L3G_SO L3G_SO_500DPS
+#else // L3G_FS_2000DPS
+#define L3G_SO L3G_SO_2000DPS
+#endif
 
 #endif

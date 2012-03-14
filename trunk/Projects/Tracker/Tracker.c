@@ -37,6 +37,7 @@
 #include "twi.h"
 #include "l3g.h"
 #include "lsm303.h"
+#include "MadgwickAHRS.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -85,7 +86,7 @@ void SetupHardware(void)
 	USB_Init();
 }
 
-void SetupSensors()
+static void SetupSensors(void)
 {
 	l3g_init();
 	lsm303_init();
@@ -118,17 +119,31 @@ int main(void)
 	}
 }
 
+static short g[3], m[3], a[3];
+static float gf[3];
+static int count = 0;
+
+#define GYRO_TO_RADIANS(a) ((float)a*M_PI/(180.0*L3G_SO))
+
 /** Reads the values of the sensors and prints out to USB. */
 void CheckSensors(void)
 {
-    short g[3], m[3], a[3];
-    
     l3g_read(&g[0], &g[1], &g[2]);
     lsm303_m_read(&m[0], &m[1], &m[2]);
     lsm303_a_read(&a[0], &a[1], &a[2]);
     
-    fprintf(&USBSerialStream, "gyro (%d, %d, %d) mag (%d, %d, %d) acc(%d, %d, %d)\n", 
-                              g[0], g[1], g[2], m[0], m[1], m[2], a[0], a[1], a[2]);
+    gf[0] = GYRO_TO_RADIANS(g[0]);
+    gf[1] = GYRO_TO_RADIANS(g[1]);
+    gf[2] = GYRO_TO_RADIANS(g[2]);
+    
+    // the mag and acc values get normalized inside, so we should be ok not scaling
+    MadgwickAHRSupdate(gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
+                        (float)m[0], (float)m[1], (float)m[2]);
+    
+    fprintf(&USBSerialStream, "gyro (%f, %f, %f) mag (%d, %d, %d) acc(%d, %d, %d) (%f, %f, %f, %f)\n", 
+                              gf[0], gf[1], gf[2], m[0], m[1], m[2], a[0], a[1], a[2], q0, q1, q2, q3);
+    
+    count++;
 }
 
 /** Event handler for the library USB Connection event. */
