@@ -123,7 +123,7 @@ static short g[3], m[3], a[3];
 static float gf[3];
 static int count = 0;
 
-#define GYRO_TO_RADIANS(a) ((float)a*M_PI/(180.0*L3G_SO))
+#define GYRO_TO_RADIANS(a) ((float)a*M_PI*L3G_SO/(180.0*1000.0))
 
 /** Reads the values of the sensors and prints out to USB. */
 void CheckSensors(void)
@@ -136,12 +136,16 @@ void CheckSensors(void)
     gf[1] = GYRO_TO_RADIANS(g[1]);
     gf[2] = GYRO_TO_RADIANS(g[2]);
     
-    // the mag and acc values get normalized inside, so we should be ok not scaling
+    // the acc values get normalized inside, so we should be ok not scaling
+    // mag is scaled because x/y has a different sensitivity than z
     MadgwickAHRSupdate(gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
-                        (float)m[0], (float)m[1], (float)m[2]);
+                        (float)m[0]/1100.0, (float)m[1]/1100.0, (float)m[2]/980.0);
     
-    fprintf(&USBSerialStream, "gyro (%f, %f, %f) mag (%d, %d, %d) acc(%d, %d, %d) (%f, %f, %f, %f)\n", 
+    char tmp[128];
+    sprintf(tmp, "gyro (%.2f, %.2f, %.2f) mag (%d, %2d, %d) acc(%d, %d, %d) (%.2f, %.2f, %.2f, %.2f)\n", 
                               gf[0], gf[1], gf[2], m[0], m[1], m[2], a[0], a[1], a[2], q0, q1, q2, q3);
+    
+    CDC_Device_SendString(&Tracker_CDC_Interface, tmp);
     
     count++;
 }
