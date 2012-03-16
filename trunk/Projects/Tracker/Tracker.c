@@ -67,6 +67,7 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
  *  used like any regular character stream in the C APIs
  */
 static FILE USBSerialStream;
+static int last;
 
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
@@ -84,6 +85,10 @@ void SetupHardware(void)
 	Buttons_Init();
 	LEDs_Init();
 	USB_Init();
+	
+	// F_CPU/1024
+	TCCR1B = 0x05;
+	last = TCNT1;
 }
 
 static void SetupSensors(void)
@@ -136,14 +141,18 @@ void CheckSensors(void)
     gf[1] = GYRO_TO_RADIANS(g[1]);
     gf[2] = GYRO_TO_RADIANS(g[2]);
     
+    int now = TCNT1;
+    float freq = ((float)F_CPU)/(1024.0*(float)(now-last));
+    last = now;
+    
     // the acc values get normalized inside, so we should be ok not scaling
     // mag is scaled because x/y has a different sensitivity than z
     MadgwickAHRSupdate(gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
                         (float)m[0]/1100.0, (float)m[1]/1100.0, (float)m[2]/980.0);
     
     char tmp[128];
-    sprintf(tmp, "gyro (%.2f, %.2f, %.2f) mag (%d, %2d, %d) acc(%d, %d, %d) (%.2f, %.2f, %.2f, %.2f)\n", 
-                              gf[0], gf[1], gf[2], m[0], m[1], m[2], a[0], a[1], a[2], q0, q1, q2, q3);
+    sprintf(tmp, "%.2f gyro (%.2f, %.2f, %.2f) mag (%d, %2d, %d) acc(%d, %d, %d) (%.2f, %.2f, %.2f, %.2f)\n", 
+                              freq, gf[0], gf[1], gf[2], m[0], m[1], m[2], a[0], a[1], a[2], q0, q1, q2, q3);
     
     CDC_Device_SendString(&Tracker_CDC_Interface, tmp);
     
