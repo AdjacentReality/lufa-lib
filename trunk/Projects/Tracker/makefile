@@ -138,6 +138,7 @@ SRC = $(TARGET).c                                                 \
       lsm303.c                                                    \
       l3g.c                                                       \
       MadgwickAHRS.c                                              \
+      packet.c                                                    \
 	  $(LUFA_SRC_USB)                                             \
 	  $(LUFA_SRC_USBCLASS)
 

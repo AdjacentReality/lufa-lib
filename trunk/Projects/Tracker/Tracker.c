@@ -38,6 +38,7 @@
 #include "l3g.h"
 #include "lsm303.h"
 #include "MadgwickAHRS.h"
+#include "packet.h"
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -132,6 +133,9 @@ static float gf[3];
 /** Reads the values of the sensors and prints out to USB. */
 void CheckSensors(void)
 {
+    packet_t p;
+    p.type = PACKET_QUAT;
+
     l3g_read(&g[0], &g[1], &g[2]);
     lsm303_m_read(&m[0], &m[1], &m[2]);
     lsm303_a_read(&a[0], &a[1], &a[2]);
@@ -148,11 +152,21 @@ void CheckSensors(void)
     // mag is scaled because x/y has a different sensitivity than z
     MadgwickAHRSupdate(freq, gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
                         (float)m[0]/1100.0, (float)m[1]/1100.0, (float)m[2]/980.0);
+
+    p.data.quat[0] = q0;
+    p.data.quat[1] = q1;
+    p.data.quat[2] = q2;
+    p.data.quat[3] = q3;
+
+//    unsigned char tmp[64];
+//    sprintf(tmp, "%d %lX %.2f %.2f %.2f %.2f\n", packed_size, *(uint32_t *)buf, q0, q1, q2, q3);
+//    CDC_Device_SendString(&Tracker_CDC_Interface, tmp);
+
+    unsigned char buf[PACKET_MAX_SIZE];
+    int packed_size = packet_pack(&p, buf);
+    CDC_Device_SendData(&Tracker_CDC_Interface, buf, packed_size);
     
-    char tmp[64];
-    sprintf(tmp, "%d %f %f %f %f\n", (int)freq, q0, q1, q2, q3);
-    
-    CDC_Device_SendString(&Tracker_CDC_Interface, tmp);
+    // USB uses 64 byte chunks. if we don't flush, it'll wait up to 1ms to send
     CDC_Device_Flush(&Tracker_CDC_Interface);
 }
 
