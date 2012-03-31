@@ -86,6 +86,7 @@ void SetupHardware(void)
 	Buttons_Init();
 	LEDs_Init();
 	USB_Init();
+	Serial_Init(115200, false);
 	
 	// F_CPU/1024
 	TCCR1B = 0x05;
@@ -164,6 +165,7 @@ void CheckSensors(void)
 
     unsigned char buf[PACKET_MAX_SIZE];
     int packed_size = packet_pack(&p, buf);
+//    Serial_SendData(buf, packed_size);
     CDC_Device_SendData(&Tracker_CDC_Interface, buf, packed_size);
     
     // USB uses 64 byte chunks. if we don't flush, it'll wait up to 1ms to send
