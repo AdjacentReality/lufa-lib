@@ -91,6 +91,10 @@ void SetupHardware(void)
 	// F_CPU/1024
 	TCCR1B = 0x05;
 	last = TCNT1;
+	
+	// Set the battery charge current to 500mA
+	DDRB |= (1 << 7);
+	PORTB |= (1 << 7);
 }
 
 static void SetupSensors(void)
