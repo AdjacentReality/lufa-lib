@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import serial
 import struct
 
@@ -37,7 +38,10 @@ class Tracker(object):
         line = self.read()
         return struct.unpack('!Bffff', line)
 
-tracker = Tracker('/dev/ttyACM0')
+port = '/dev/ttyACM0'
+if (len(sys.argv) > 1):
+    port = sys.argv[1]
+tracker = Tracker(port)
 while True:
     print tracker.quaternion()
 
