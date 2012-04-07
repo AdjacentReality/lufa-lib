@@ -1,5 +1,6 @@
 #include "packet.h"
 #include <inttypes.h>
+#include <LUFA/Common/Common.h>
 
 // A NONSTANDARD FOR TRANSMISSION OF IP DATAGRAMS OVER SERIAL LINES: SLIP
 // http://tools.ietf.org/rfc/rfc1055.txt
@@ -7,15 +8,6 @@
 #define ESC             0xDB    /* indicates byte stuffing */
 #define ESC_END         0xDC    /* ESC ESC_END means END data byte */
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
-
-// avr-libc doesn't come with arpa/inet.h
-// TODO: can we do this more efficiently with inline asm?
-#define htonl(a) ((((uint32_t)(a) & 0xFF000000) >> 24) | \
-                  (((uint32_t)(a) & 0x00FF0000) >> 8) | \
-                  (((uint32_t)(a) & 0x0000FF00) << 8) | \
-                  (((uint32_t)(a) & 0x000000FF) << 24))
-                  
-#define ntohl htonl
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -50,7 +42,7 @@ int packet_pack(packet_p packet, unsigned char *out)
     switch(packet->type) {
         case PACKET_QUAT:
             for (int i = 0; i < 4; i++) {
-                uint32_t tmp = htonl(*(uint32_t *)&packet->data.quat[i]);
+                uint32_t tmp = cpu_to_be32(*(uint32_t *)&packet->data.quat[i]);
                 out_len += pack_seq((unsigned char *)&tmp, sizeof(uint32_t), out+out_len);
             }
             break;
@@ -59,7 +51,7 @@ int packet_pack(packet_p packet, unsigned char *out)
         case PACKET_GYRO:
         case PACKET_MAG:
             for (int i = 0; i < 3; i++) {
-                uint32_t tmp = htonl(*(uint32_t *)&packet->data.sensor[i]);
+                uint32_t tmp = cpu_to_be32(*(uint32_t *)&packet->data.sensor[i]);
                 out_len += pack_seq((unsigned char *)&tmp, sizeof(uint32_t), out+out_len);
             }
             break;
