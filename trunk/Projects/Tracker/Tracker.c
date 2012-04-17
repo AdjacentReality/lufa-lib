@@ -86,7 +86,7 @@ void SetupHardware(void)
 	Buttons_Init();
 	LEDs_Init();
 	USB_Init();
-	Serial_Init(115200, false);
+	Serial_Init(38400, false);
 	
 	// F_CPU/1024
 	TCCR1B = 0x05;
@@ -109,9 +109,6 @@ static void SetupSensors(void)
 int main(void)
 {
 	SetupHardware();
-
-	/* Create a regular character stream for the interface so that it can be used with the stdio.h functions */
-	CDC_Device_CreateStream(&Tracker_CDC_Interface, &USBSerialStream);
 
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
 	sei();

@@ -10,7 +10,7 @@ class Tracker(object):
         self.ESC = chr(0xDB)
         self.ESC_END = chr(0xDC)
         self.ESC_ESC = chr(0xDD)
-        self.ser = serial.Serial(port=port)
+        self.ser = serial.Serial(port, 38400)
         self.ser.open()
         self.ser.flushInput()
         # read out any partially complete packet
