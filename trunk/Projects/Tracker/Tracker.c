@@ -64,12 +64,6 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 			},
 	};
 
-/** Standard file stream for the CDC interface when set up, so that the virtual CDC COM port can be
- *  used like any regular character stream in the C APIs
- */
-static FILE USBSerialStream;
-static int last;
-
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
 {
@@ -90,7 +84,6 @@ void SetupHardware(void)
 	
 	// F_CPU/1024
 	TCCR1B = 0x05;
-	last = TCNT1;
 	
 	// Set the battery charge current to 500mA
 	DDRB |= (1 << 7);
@@ -115,6 +108,8 @@ int main(void)
 
     SetupSensors();
 
+    // Reset the timer so the setup time isn't taken into account
+    TCNT1 = 0;
 	for (;;)
 	{
 		CheckSensors();
@@ -146,9 +141,10 @@ void CheckSensors(void)
     gf[1] = GYRO_TO_RADIANS(g[1]);
     gf[2] = GYRO_TO_RADIANS(g[2]);
     
-    int now = TCNT1;
-    float freq = ((float)F_CPU)/(1024.0*(float)(now-last));
-    last = now;
+    // to avoid the frequency measurement from impacting itself
+    int elapsed = TCNT1;
+    TCNT1 = 0;
+    float freq = ((float)F_CPU)/(1024.0*(float)(elapsed));
     
     // the acc values get normalized inside, so we should be ok not scaling
     // mag is scaled because x/y has a different sensitivity than z
