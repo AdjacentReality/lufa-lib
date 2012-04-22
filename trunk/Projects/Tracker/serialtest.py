@@ -4,6 +4,14 @@ import sys
 import serial
 import struct
 
+PACKET_QUAT = 0
+PACKET_ACC = 1
+PACKET_GYRO = 2
+PACKET_MAG = 3
+PACKET_COLOR = 4
+PACKET_BLINK = 5
+PACKET_MAX = 6
+
 class Tracker(object):
     def __init__(self, port):
         self.END = chr(0xC0)
@@ -14,9 +22,9 @@ class Tracker(object):
         self.ser.open()
         self.ser.flushInput()
         # read out any partially complete packet
-        self.read()
+        self.read_packet()
         
-    def read(self):
+    def read_packet(self):
         line = []
     
         while True:
@@ -34,14 +42,35 @@ class Tracker(object):
                 
         return ''.join(line)
         
+    def write_packet(self, packet):
+        slipped = [];
+        
+        for c in packet:
+            if c == self.END:
+                slipped.append(self.ESC)
+                slipped.append(self.ESC_END)
+            elif c == self.ESC:
+                slipped.append(self.ESC)
+                slipped.append(self.ESC_ESC)
+            else:
+                slipped.append(c)
+                
+        slipped.append(self.END)
+        self.ser.write(''.join(slipped))
+        
+    def set_color(self, rgb):
+        packed = struct.pack('!BBBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2], 0)
+        self.write_packet(packed)
+        
     def quaternion(self):
-        line = self.read()
-        return struct.unpack('!Bffff', line)
+        packet = self.read_packet()
+        return struct.unpack('!Bffff', packet)
 
 port = '/dev/ttyACM0'
 if (len(sys.argv) > 1):
     port = sys.argv[1]
 tracker = Tracker(port)
+tracker.set_color((255, 0, 255))
 while True:
     print tracker.quaternion()
 
