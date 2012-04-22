@@ -136,6 +136,7 @@ include $(LUFA_PATH)/LUFA/makefile
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c                                                 \
 	  Descriptors.c                                               \
+	  led.c                                                       \
       twi.c                                                       \
       lsm303.c                                                    \
       l3g.c                                                       \

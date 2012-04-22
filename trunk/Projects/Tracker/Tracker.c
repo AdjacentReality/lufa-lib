@@ -34,11 +34,24 @@
  */
 
 #include "Tracker.h"
+#include "led.h"
 #include "twi.h"
 #include "l3g.h"
 #include "lsm303.h"
 #include "MadgwickAHRS.h"
 #include "packet.h"
+
+/** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
+static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
+
+/** LED mask for the library LED driver, to indicate that the USB interface is enumerating. */
+static const unsigned char LEDMASK_USB_ENUMERATING[3] = {255, 255, 0};
+
+/** LED mask for the library LED driver, to indicate that the USB interface is ready. */
+static const unsigned char LEDMASK_USB_READY[3] = {0, 255, 0};
+
+/** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
+static const unsigned char LEDMASK_USB_ERROR[3] = {255, 0, 0};
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -77,7 +90,7 @@ void SetupHardware(void)
 	/* Hardware Initialization */
 	twi_init();
 	Buttons_Init();
-	LEDs_Init();
+	led_init();
 	USB_Init();
 	Serial_Init(38400, false);
 	
@@ -102,7 +115,7 @@ int main(void)
 {
 	SetupHardware();
 
-	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
+	led_set_array(LEDMASK_USB_NOTREADY);
 	sei();
 
     SetupSensors();
@@ -186,13 +199,13 @@ void SendData(void)
 /** Event handler for the library USB Connection event. */
 void EVENT_USB_Device_Connect(void)
 {
-	LEDs_SetAllLEDs(LEDMASK_USB_ENUMERATING);
+	led_set_array(LEDMASK_USB_ENUMERATING);
 }
 
 /** Event handler for the library USB Disconnection event. */
 void EVENT_USB_Device_Disconnect(void)
 {
-	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
+	led_set_array(LEDMASK_USB_NOTREADY);
 }
 
 /** Event handler for the library USB Configuration Changed event. */
@@ -202,7 +215,7 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 
 	ConfigSuccess &= CDC_Device_ConfigureEndpoints(&Tracker_CDC_Interface);
 
-	LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
+	led_set_array(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
 }
 
 /** Event handler for the library USB Control Request reception event. */
