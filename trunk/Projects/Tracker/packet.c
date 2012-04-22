@@ -9,6 +9,9 @@
 #define ESC_END         0xDC    /* ESC ESC_END means END data byte */
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
 
+const int const g_packet_size[6] = {1+4*sizeof(float), 1+3*sizeof(float), 1+3*sizeof(float),
+    1+3*sizeof(float), 1+4, 1+4};
+
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
     unsigned char *initial = out;
@@ -68,10 +71,61 @@ int packet_pack(packet_p packet, unsigned char *out)
     return out_len;
 }
 
-// Unpack from a SLIP packed buffer
-int packet_unpack(packet_p packet, unsigned char *in, int in_size)
+static bool packet_parse(packet_p packet, unsigned char *buf, int len)
 {
-    // TODO: well, you know
+    packet->type = buf[0];
+    
+    // For now, we only care about reading color setting messages
+    if (((buf[0] == PACKET_COLOR) || (buf[0] == PACKET_BLINK)) &&
+        (len == g_packet_size[PACKET_COLOR])) {
+        packet->data.color[0] = buf[1];
+        packet->data.color[1] = buf[2];
+        packet->data.color[2] = buf[3];
+        packet->data.color[3] = buf[4];
+        return 1;
+    }
+    
+    return 0;
+}
+
+static unsigned char unpacked_buf[UNPACKED_MAX_SIZE+1];
+static unsigned int unpacked_len = 0;
+static bool escaping = 0;
+
+// Unpack a SLIP encoded stream one char at a time, returning 1 when a packet is done
+bool packet_unpack(packet_p packet, unsigned char c)
+{
+    bool ret = 0;
+
+    switch (c) {
+        case END:
+            if (packet_parse(packet, unpacked_buf, unpacked_len))
+                ret = 1;
+            unpacked_len = 0;
+            break;
+        case ESC:
+            escaping = 1;
+            break;
+        case ESC_END:
+            if (escaping) *(unpacked_buf+unpacked_len) = END;
+            else *(unpacked_buf+unpacked_len) = ESC_END;
+            unpacked_len++;
+            break;
+        case ESC_ESC:
+            if (escaping) *(unpacked_buf+unpacked_len) = ESC;
+            else *(unpacked_buf+unpacked_len) = ESC_ESC;
+            unpacked_len++;
+            break;
+        default:
+            *(unpacked_buf+unpacked_len) = c;
+            unpacked_len++;
+            break;
+    }
+    
+    if (c != ESC) escaping = 0;
+    // reset the buffer if it no packet was formed
+    if (unpacked_len > UNPACKED_MAX_SIZE) unpacked_len = 0;
+
     return 0;
 }
 

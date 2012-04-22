@@ -73,16 +73,15 @@ void SetupHardware(void)
 
 	/* Disable clock division */
 	clock_prescale_set(clock_div_1);
-
-    twi_init();
 	
 	/* Hardware Initialization */
+	twi_init();
 	Buttons_Init();
 	LEDs_Init();
 	USB_Init();
 	Serial_Init(38400, false);
 	
-	// F_CPU/1024
+	// Set the 16 bit timer to increment at F_CPU/1024 Hz
 	TCCR1B = 0x05;
 	
 	// Set the battery charge current to 500mA
@@ -112,26 +111,43 @@ int main(void)
     TCNT1 = 0;
 	for (;;)
 	{
+	    ReadData();
 		CheckSensors();
-
+		SendData();
+		
 		/* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
-		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
+//		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
 
 		CDC_Device_USBTask(&Tracker_CDC_Interface);
 		USB_USBTask();
 	}
 }
 
-static short g[3], m[3], a[3];
-static float gf[3];
+void ReadData(void)
+{
+    int to_read = CDC_Device_BytesReceived(&Tracker_CDC_Interface);
+    if (to_read > 0) {
+        packet_t p;
+    
+        while (to_read--) {
+            int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
+            if (in_byte >= 0) {
+                if(packet_unpack(&p, in_byte)) {
+                    
+                }
+            } else
+                break;
+        }
+    }
+}
 
 #define GYRO_TO_RADIANS(a) ((float)a*M_PI*L3G_SO/(180.0*1000.0))
 
 /** Reads the values of the sensors and prints out to USB. */
 void CheckSensors(void)
 {
-    packet_t p;
-    p.type = PACKET_QUAT;
+    short g[3], m[3], a[3];
+    float gf[3];
 
     l3g_read(&g[0], &g[1], &g[2]);
     lsm303_m_read(&m[0], &m[1], &m[2]);
@@ -150,23 +166,21 @@ void CheckSensors(void)
     // mag is scaled because x/y has a different sensitivity than z
     MadgwickAHRSupdate(freq, gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
                         (float)m[0]/1100.0, (float)m[1]/1100.0, (float)m[2]/980.0);
+}
 
+void SendData(void)
+{
+    packet_t p;
+    p.type = PACKET_QUAT;
     p.data.quat[0] = q0;
     p.data.quat[1] = q1;
     p.data.quat[2] = q2;
     p.data.quat[3] = q3;
 
-//    unsigned char tmp[64];
-//    sprintf(tmp, "%d %lX %.2f %.2f %.2f %.2f\n", packed_size, *(uint32_t *)buf, q0, q1, q2, q3);
-//    CDC_Device_SendString(&Tracker_CDC_Interface, tmp);
-
     unsigned char buf[PACKET_MAX_SIZE];
     int packed_size = packet_pack(&p, buf);
 //    Serial_SendData(buf, packed_size);
-    CDC_Device_SendData(&Tracker_CDC_Interface, buf, packed_size);
-    
-    // USB uses 64 byte chunks. if we don't flush, it'll wait up to 1ms to send
-    CDC_Device_Flush(&Tracker_CDC_Interface);
+    CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
 }
 
 /** Event handler for the library USB Connection event. */

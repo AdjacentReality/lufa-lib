@@ -68,6 +68,8 @@
 	/* Function Prototypes: */
 		void SetupHardware(void);
 		void CheckSensors(void);
+		void ReadData(void);
+		void SendData(void);
 
 		void EVENT_USB_Device_Connect(void);
 		void EVENT_USB_Device_Disconnect(void);
