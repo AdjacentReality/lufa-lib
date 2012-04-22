@@ -145,11 +145,17 @@ void ReadData(void)
         while (to_read--) {
             int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
             if (in_byte >= 0) {
-                if(packet_unpack(&p, in_byte)) {
-                    
+                // use the packets as they complete
+                if (packet_unpack(&p, in_byte)) {
+                    switch(p.type) {
+                        // for now, we only care about led setting packets
+                        case PACKET_COLOR:
+                            led_set_array(p.data.color);
+                            break;
+                    }
                 }
             } else
-                break;
+                break; // stop if we fail to read a byte
         }
     }
 }

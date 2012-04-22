@@ -126,6 +126,6 @@ bool packet_unpack(packet_p packet, unsigned char c)
     // reset the buffer if it no packet was formed
     if (unpacked_len > UNPACKED_MAX_SIZE) unpacked_len = 0;
 
-    return 0;
+    return ret;
 }
 
