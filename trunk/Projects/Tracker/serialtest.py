@@ -66,11 +66,12 @@ class Tracker(object):
         packet = self.read_packet()
         return struct.unpack('!Bffff', packet)
 
-port = '/dev/ttyACM0'
-if (len(sys.argv) > 1):
-    port = sys.argv[1]
-tracker = Tracker(port)
-tracker.set_color((255, 0, 255))
-while True:
-    print tracker.quaternion()
+if __name__ == '__main__':
+    port = '/dev/ttyACM0'
+    if (len(sys.argv) > 1):
+        port = sys.argv[1]
+    tracker = Tracker(port)
+    tracker.set_color((255, 0, 255))
+    while True:
+        print tracker.quaternion()
 
