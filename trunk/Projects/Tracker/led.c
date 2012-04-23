@@ -1,8 +1,9 @@
 #include "led.h"
 #include <avr/io.h>
+#include <stdlib.h>
 
 #define LED_RED     PORTD7  // 4D
-#define LED_GREEN   PORTC6  // 3A/!4A
+#define LED_GREEN   PORTC6  // 3A
 #define LED_BLUE    PORTD6  // !4D
 #define LED_IR      PORTC7  // 4A
 
@@ -24,7 +25,8 @@ void led_init(void)
     OCR4C = 0xFF; // top at 256 counts
     OCR4A = 0xFF; // start IR at off
     OCR4D = 0xFF; // start red at off
-    TCCR4B = (1 << CS42); // clock/8, but which clock is it using?
+    // dead time at clock/8, pwm at full clock to maximize dead time length
+    TCCR4B = (1 << DTPS41) | (1 << DTPS40) | (1 << CS40);
     TCCR4A = (1 << COM4A1) | (1 << PWM4A); // enable clear on match PWM for IR
     TCCR4C = (1 << COM4D1) | (1 << PWM4D); // enable clear on match PWM for red
 }
@@ -41,9 +43,23 @@ void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
     OCR3A = 0xFF - green;
     
     // I screwed up and assigned blue and red to inverted outputs of the same compare
-    // TODO: fake independent PWM using the dead time generator
-    if (blue != 0) PORTD &= ~(1 << LED_BLUE);
-    else PORTD |= (1 << LED_BLUE);
+    // so try to do some fake independent PWM using the dead time generator
+    int diff = (int)blue - (int)(0xFF - red);
+    if ((diff > 0) && (diff <= 120)) {
+        DT4 = (0x0F & (diff >> 3)); // use dead time to keep blue on for longer
+        TCCR4C = (1 << COM4D0) | (1 << PWM4D); // enable inverted red and blue
+    } else {
+        diff = abs(diff);
+        // use the regular inverted output only if it is closer to correct than 0 or 255
+        if ((diff >= blue) || (diff >= (0xFF - blue))) {
+            TCCR4C = (1 << COM4D1) | (1 << PWM4D); // disable inverted red and blue
+            if (blue != 0) PORTD &= ~(1 << LED_BLUE);
+            else PORTD |= (1 << LED_BLUE);
+        } else {
+            DT4 = 0; // clear dead time
+            TCCR4C = (1 << COM4D0) | (1 << PWM4D); // enable inverted red and blue
+        }
+    }
 }
 
 void led_set_ir(unsigned char ir)
