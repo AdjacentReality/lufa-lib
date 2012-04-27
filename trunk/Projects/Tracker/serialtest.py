@@ -10,7 +10,9 @@ PACKET_GYRO = 2
 PACKET_MAG = 3
 PACKET_COLOR = 4
 PACKET_BLINK = 5
-PACKET_MAX = 6
+PACKET_IR = 6
+PACKET_VERSION = 7
+PACKET_MAX = 8
 
 class Tracker(object):
     def __init__(self, port):
@@ -59,7 +61,7 @@ class Tracker(object):
         self.ser.write(''.join(slipped))
         
     def set_color(self, rgb):
-        packed = struct.pack('!BBBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2], 0)
+        packed = struct.pack('!BBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2])
         self.write_packet(packed)
         
     def quaternion(self):
@@ -73,5 +75,6 @@ if __name__ == '__main__':
     tracker = Tracker(port)
     tracker.set_color((255, 0, 255))
     while True:
+        tracker.set_color((255, 0, 255))
         print tracker.quaternion()
 

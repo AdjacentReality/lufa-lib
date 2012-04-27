@@ -2,6 +2,7 @@
 #define _PACKET_H_
 
 #include <stdbool.h>
+#include <inttypes.h>
 
 enum packet_type {
     PACKET_QUAT = 0,
@@ -10,7 +11,10 @@ enum packet_type {
     PACKET_MAG = 3,
     PACKET_COLOR = 4,
     PACKET_BLINK = 5,
-    PACKET_MAX = 6
+    PACKET_IR = 6,
+    PACKET_VERSION = 7,
+    PACKET_ID = 8,
+    PACKET_MAX = 9
 };
 
 typedef struct packet_s {
@@ -18,7 +22,8 @@ typedef struct packet_s {
     union {
         float quat[4];
         float sensor[3];
-        unsigned char color[4];
+        unsigned char color[3];
+        uint32_t version;
     } data;
 } packet_t, *packet_p;
 
