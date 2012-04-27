@@ -77,6 +77,8 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 			},
 	};
 
+bool useUSB = 0;
+
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
 {
@@ -127,35 +129,50 @@ int main(void)
 	    ReadData();
 		CheckSensors();
 		SendData();
-		
-		/* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
-//		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
+        
+        /* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
+        if (!useUSB) // we otherwise grab bytes in ReadData if we are using USB
+    		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
 
 		CDC_Device_USBTask(&Tracker_CDC_Interface);
 		USB_USBTask();
 	}
 }
 
+static void ParseByte(unsigned char c)
+{
+    packet_t p;
+    // use the packets as they complete
+    if (packet_unpack(&p, c)) {
+        switch(p.type) {
+            // for now, we only care about led setting packets
+            case PACKET_COLOR:
+                led_set_array(p.data.color);
+                break;
+        }
+    }
+}
+
 void ReadData(void)
 {
-    int to_read = CDC_Device_BytesReceived(&Tracker_CDC_Interface);
-    if (to_read > 0) {
-        packet_t p;
-    
-        while (to_read--) {
-            int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
-            if (in_byte >= 0) {
-                // use the packets as they complete
-                if (packet_unpack(&p, in_byte)) {
-                    switch(p.type) {
-                        // for now, we only care about led setting packets
-                        case PACKET_COLOR:
-                            led_set_array(p.data.color);
-                            break;
-                    }
-                }
-            } else
-                break; // stop if we fail to read a byte
+    if (useUSB) {
+        int to_read = CDC_Device_BytesReceived(&Tracker_CDC_Interface);
+        if (to_read > 0) {
+            while (to_read--) {
+                int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
+                if (in_byte >= 0)
+                    ParseByte(in_byte);
+                else
+                    break; // stop if we fail to read a byte
+            }
+        }
+    } else {
+        while (1) {
+            int16_t in_byte = Serial_ReceiveByte();
+            if (in_byte >= 0)
+                ParseByte(in_byte);
+            else
+                break;
         }
     }
 }
@@ -198,8 +215,10 @@ void SendData(void)
 
     unsigned char buf[PACKET_MAX_SIZE];
     int packed_size = packet_pack(&p, buf);
-//    Serial_SendData(buf, packed_size);
-    CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
+    if (useUSB)
+        CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
+    else
+        Serial_SendData(buf, packed_size);
 }
 
 /** Event handler for the library USB Connection event. */
@@ -212,6 +231,7 @@ void EVENT_USB_Device_Connect(void)
 void EVENT_USB_Device_Disconnect(void)
 {
 	led_set_array(LEDMASK_USB_NOTREADY);
+	useUSB = 0;
 }
 
 /** Event handler for the library USB Configuration Changed event. */
@@ -222,6 +242,7 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	ConfigSuccess &= CDC_Device_ConfigureEndpoints(&Tracker_CDC_Interface);
 
 	led_set_array(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
+	useUSB = ConfigSuccess;
 }
 
 /** Event handler for the library USB Control Request reception event. */
