@@ -34,6 +34,7 @@
  */
 
 #include "Tracker.h"
+#include "version.h"
 #include "led.h"
 #include "twi.h"
 #include "l3g.h"
@@ -102,6 +103,12 @@ void SetupHardware(void)
 	// Set the battery charge current to 500mA
 	DDRB |= (1 << 7);
 	PORTB |= (1 << 7);
+	
+#ifdef LTC3554
+	// Enable buck regulator 1
+	DDRB |= (1 << 6);
+	PORTB |= (1 << 6);
+#endif /* LTC3554 */
 }
 
 static void SetupSensors(void)

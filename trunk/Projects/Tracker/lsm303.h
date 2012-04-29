@@ -7,10 +7,17 @@
 #ifndef LSM303_H
 #define LSM303_H
 
+#include "version.h"
+
 //Seperate address for each function
 #define LSM303_ADDRESS_M		0x3C
+
+#ifdef LSM303DLM
 //Accelerometer address is either 0x30 or 0x32 depending on SA0
 #define LSM303_ADDRESS_A		0x30
+#elif defined LSM303DLHC
+#define LSM303_ADDRESS_A		0x32
+#endif
 
 void lsm303_init(void);
 unsigned char lsm303_a_drdy(void);
