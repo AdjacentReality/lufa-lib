@@ -41,6 +41,7 @@
 #include "lsm303.h"
 #include "MadgwickAHRS.h"
 #include "packet.h"
+#include "uart.h"
 
 /** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
 static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
@@ -92,10 +93,9 @@ void SetupHardware(void)
 	
 	/* Hardware Initialization */
 	twi_init();
-	Buttons_Init();
 	led_init();
 	USB_Init();
-	Serial_Init(38400, false);
+	uart_init(38400, false);
 	
 	// Set the 16 bit timer to increment at F_CPU/1024 Hz
 	TCCR1B = 0x05;
@@ -175,7 +175,7 @@ void ReadData(void)
         }
     } else {
         while (1) {
-            int16_t in_byte = Serial_ReceiveByte();
+            int16_t in_byte = uart_getc();
             if (in_byte >= 0)
                 ParseByte(in_byte);
             else
@@ -225,7 +225,7 @@ void SendData(void)
     if (useUSB)
         CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
     else
-        Serial_SendData(buf, packed_size);
+        uart_send(buf, packed_size);
 }
 
 /** Event handler for the library USB Connection event. */
