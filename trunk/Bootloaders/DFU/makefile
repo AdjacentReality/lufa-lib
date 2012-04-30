@@ -48,7 +48,7 @@
 
 
 # MCU name
-MCU = at90usb1287
+MCU = atmega32u4
 
 
 # Target architecture (see library "Board Types" documentation).
@@ -58,7 +58,7 @@ ARCH = AVR8
 # Target board (see library "Board Types" documentation, NONE for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called
 # "Board" inside the application directory.
-BOARD = USBKEY
+BOARD = NONE
 
 
 # Processor frequency.
@@ -94,7 +94,7 @@ F_USB = $(F_CPU)
 #
 # Note that the bootloader size and start address given in AVRStudio is in words and not
 # bytes, and so will need to be doubled to obtain the byte address needed by AVR-GCC.
-FLASH_SIZE_KB        = 128
+FLASH_SIZE_KB        = 32
 BOOT_SECTION_SIZE_KB = 4
 
 
@@ -135,7 +135,7 @@ LUFA_OPTS += -D NO_INTERNAL_SERIAL
 LUFA_OPTS += -D NO_DEVICE_SELF_POWER
 LUFA_OPTS += -D NO_DEVICE_REMOTE_WAKEUP
 LUFA_OPTS += -D NO_SOF_EVENTS
-
+LUFA_OPTS += -D TRACKER_BOARD_REVISION=2
 
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
