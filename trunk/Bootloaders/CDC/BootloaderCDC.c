@@ -36,6 +36,8 @@
 #define  INCLUDE_FROM_BOOTLOADERCDC_C
 #include "BootloaderCDC.h"
 
+#define LED_RED     PORTD7  // 4D
+
 /** Contains the current baud rate and other settings of the first virtual serial port. This must be retained as some
  *  operating systems will not open the port unless the settings can be set successfully.
  */
@@ -67,7 +69,7 @@ int main(void)
 	SetupHardware();
 
 	/* Turn on first LED on the board to indicate that the bootloader has started */
-	LEDs_SetAllLEDs(LEDS_LED1);
+	PORTD ^= (1 << LED_RED);
 
 	/* Enable global interrupts so that the USB stack can function */
 	sei();
@@ -101,9 +103,18 @@ static void SetupHardware(void)
 	MCUCR = (1 << IVCE);
 	MCUCR = (1 << IVSEL);
 
+#if TRACKER_BOARD_REVISION == 2
+	// Enable buck regulator 1
+	DDRB |= (1 << 6);
+	PORTB |= (1 << 6);
+#endif
+
+    // we're sinking all LEDs into the pins, so set them high to turn off
+    DDRD |= (1 << LED_RED);
+    PORTD |= (1 << LED_RED);
+
 	/* Initialize the USB and other board hardware drivers */
 	USB_Init();
-	LEDs_Init();
 
 	/* Bootloader active LED toggle timer initialization */
 	TIMSK1 = (1 << TOIE1);
@@ -113,7 +124,7 @@ static void SetupHardware(void)
 /** ISR to periodically toggle the LEDs on the board to indicate that the bootloader is active. */
 ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
-	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+    PORTD ^= (1 << LED_RED);
 }
 
 /** Event handler for the USB_ConfigurationChanged event. This configures the device's endpoints ready
@@ -149,7 +160,7 @@ void EVENT_USB_Device_ControlRequest(void)
 	}
 
 	/* Activity - toggle indicator LEDs */
-	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+    PORTD ^= (1 << LED_RED);
 
 	/* Process CDC specific control requests */
 	switch (USB_ControlRequest.bRequest)
