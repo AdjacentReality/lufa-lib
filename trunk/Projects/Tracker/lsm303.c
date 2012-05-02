@@ -9,6 +9,7 @@ void lsm303_init(void){
 	//We will set 5 contiguous ctrl registers located at CTRL_REG1
 	buf[0] = LSM303_AUTO_INCREMENT | LSM303_CTRL_REG1_A;
 	
+#ifdef LSM303DLM
 	buf[1] = LSM303_DR_100HZ_A |		// Data rate          CTRL_REG1
 			 LSM303_PD_A |			// Power on
 			 LSM303_ZEN_A |			// Z-Axis on
@@ -20,6 +21,18 @@ void lsm303_init(void){
 	buf[4] = LSM303_FS_2G_A |		// Scale selection
 			 LSM303_BDU_A;			// Block updates during H/L byte read
 	buf[5] = 0x00;						// CTRL_REG5
+#elif defined LSM303DLHC
+	buf[1] = LSM303_DR_200HZ_A |		// Data rate          CTRL_REG1
+			 LSM303_ZEN_A |			// Z-Axis on
+			 LSM303_YEN_A |			// Y-Axis on
+			 LSM303_XEN_A;			// X-Axis on
+	buf[2] = 0x00;						//                    CTRL_REG2
+	buf[3] = LSM303_I1_DRDY_A;		// Enable DRDY interrupt pin on setting of ZYXDA (new data)
+	buf[4] = LSM303_HR |            // Enable high resolution mode
+	         LSM303_FS_2G_A |		// Scale selection
+			 LSM303_BDU_A;			// Block updates during H/L byte read
+	buf[5] = 0x00;						// CTRL_REG5
+#endif
 	
 	twi_write_block(LSM303_ADDRESS_A, buf, 6);
 
@@ -27,7 +40,7 @@ void lsm303_init(void){
 	//We will set 3 contiguous ctrl registers located at CRA_REG
 	buf[0] = LSM303_AUTO_INCREMENT | LSM303_CRA_REG_M;
 	
-	buf[1] = LSM303_DR_75HZ_M;		// Data rate        CRA_REG
+	buf[1] = LSM303_DR_220HZ_M;		// Data rate        CRA_REG
 	buf[2] = LSM303_GN_1_3G_M;		// Gain             CRB_REG  
 	buf[3] = LSM303_CONTINUOUS_M;	// MR               MR_REG
 	

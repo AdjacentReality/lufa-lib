@@ -45,23 +45,46 @@ void lsm303_m_read(short *x, short *y, short *z);
 #define LSM303_AUTO_INCREMENT         0x80
 
 //CTRL_REG1_A: Data rates
+#ifdef LSM303DLM
 #define LSM303_DR_50HZ_A		0x00
 #define LSM303_DR_100HZ_A		0x08
 #define LSM303_DR_400HZ_A		0x10
 #define LSM303_DR_1000HZ_A		0x18
+#elif defined LSM303DLHC
+#define LSM303_DR_1HZ_A		    0x10
+#define LSM303_DR_10HZ_A		0x20
+#define LSM303_DR_25HZ_A		0x30
+#define LSM303_DR_50HZ_A		0x40
+#define LSM303_DR_100HZ_A		0x50
+#define LSM303_DR_200HZ_A		0x60
+#define LSM303_DR_400HZ_A		0x70
+#define LSM303_DR_1344HZ_A		0x90
+#endif
 //CTRL_REG1_A: Enables
+#ifdef LSM303DLM
 #define LSM303_PD_A			0x20
+#endif // LSM303DLHC defaults to normal power mode
 #define LSM303_ZEN_A			0x04
 #define LSM303_YEN_A 		0x02
 #define LSM303_XEN_A			0x01
-//CTRL_REG3_A: Interrupts	
+
+//CTRL_REG3_A: Interrupts
+#ifdef LSM303DLM
 #define LSM303_IHL_A			0x80
 #define LSM303_I1_DRDY_A		0x02
+#elif defined LSM303DLHC
+#define LSM303_I1_DRDY_A		0x10
+#endif
+
 //CTRL_REG4_A: Scale
 #define LSM303_BDU_A			0x80
 #define LSM303_FS_2G_A		0x00
 #define LSM303_FS_4G_A		0x10
 #define LSM303_FS_8G_A		0x30
+#ifdef LSM303DLHC
+#define LSM303_HR           0x80
+#endif
+
 //STATUS_REG_A:
 #define LSM303_ZYXDA_A		0x08
 #define LSM303_ZYXOR_A		0x80
