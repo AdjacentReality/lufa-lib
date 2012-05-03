@@ -186,12 +186,12 @@ void ReadData(void)
 
 #define GYRO_TO_RADIANS(a) ((float)a*M_PI*L3G_SO/(180.0*1000.0))
 
+short g[3], m[3], a[3];
+float gf[3], mf[3];
+
 /** Reads the values of the sensors and prints out to USB. */
 void CheckSensors(void)
 {
-    short g[3], m[3], a[3];
-    float gf[3];
-
     l3g_read(&g[0], &g[1], &g[2]);
     lsm303_m_read(&m[0], &m[1], &m[2]);
     lsm303_a_read(&a[0], &a[1], &a[2]);
@@ -199,6 +199,10 @@ void CheckSensors(void)
     gf[0] = GYRO_TO_RADIANS(g[0]);
     gf[1] = GYRO_TO_RADIANS(g[1]);
     gf[2] = GYRO_TO_RADIANS(g[2]);
+    
+    mf[0] = (float)m[0]/1100.0;
+    mf[1] = (float)m[1]/1100.0;
+    mf[2] = (float)m[2]/980.0;
     
     // to avoid the frequency measurement from impacting itself
     int elapsed = TCNT1;
@@ -208,7 +212,17 @@ void CheckSensors(void)
     // the acc values get normalized inside, so we should be ok not scaling
     // mag is scaled because x/y has a different sensitivity than z
     MadgwickAHRSupdate(freq, gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
-                        (float)m[0]/1100.0, (float)m[1]/1100.0, (float)m[2]/980.0);
+                        mf[0], mf[1], mf[2]);
+}
+
+static void PackAndSend(packet_p p)
+{
+    unsigned char buf[PACKET_MAX_SIZE];
+    int packed_size = packet_pack(p, buf);
+    if (useUSB)
+        CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
+    else
+        uart_send(buf, packed_size);
 }
 
 void SendData(void)
@@ -219,13 +233,16 @@ void SendData(void)
     p.data.quat[1] = q1;
     p.data.quat[2] = q2;
     p.data.quat[3] = q3;
-
-    unsigned char buf[PACKET_MAX_SIZE];
-    int packed_size = packet_pack(&p, buf);
-    if (useUSB)
-        CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
-    else
-        uart_send(buf, packed_size);
+    PackAndSend(&p);
+    
+    // TODO: add capability to set which packet types are sent continuously
+    if (0) {
+        p.type = PACKET_MAG;
+        p.data.sensor[0] = mf[0];
+        p.data.sensor[1] = mf[1];
+        p.data.sensor[2] = mf[2];
+        PackAndSend(&p);
+    }   
 }
 
 /** Event handler for the library USB Connection event. */
