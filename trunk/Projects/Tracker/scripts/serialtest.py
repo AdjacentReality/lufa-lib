@@ -33,7 +33,7 @@ class Tracker(object):
         if t == PACKET_QUAT:
             return struct.unpack('!Bffff', packet)
         elif t == PACKET_ACC or t == PACKET_GYRO or t == PACKET_MAG:
-            return struct.unpack('!Bfff', packet)
+            return struct.unpack('!Bhhh', packet)
         elif t == PACKET_COLOR or t == PACKET_BLINK:
             return struct.unpack('!BBBB', packet)
         elif t == PACKET_IR:

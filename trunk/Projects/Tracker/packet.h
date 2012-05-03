@@ -21,7 +21,7 @@ typedef struct packet_s {
     unsigned char type;
     union {
         float quat[4];
-        float sensor[3];
+        int16_t sensor[3];
         unsigned char color[3];
         uint32_t version;
     } data;

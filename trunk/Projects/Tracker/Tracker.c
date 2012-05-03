@@ -247,9 +247,9 @@ void SendData(void)
     // TODO: add capability to set which packet types are sent continuously
     if (0) {
         p.type = PACKET_MAG;
-        p.data.sensor[0] = mf[0];
-        p.data.sensor[1] = mf[1];
-        p.data.sensor[2] = mf[2];
+        p.data.sensor[0] = m[0];
+        p.data.sensor[1] = m[1];
+        p.data.sensor[2] = m[2];
         PackAndSend(&p);
     }   
 }

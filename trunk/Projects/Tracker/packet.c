@@ -8,8 +8,8 @@
 #define ESC_END         0xDC    /* ESC ESC_END means END data byte */
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
 
-const int const g_packet_size[PACKET_MAX] = {1+4*sizeof(float), 1+3*sizeof(float), 1+3*sizeof(float),
-    1+3*sizeof(float), 1+3, 1+3, 1+1, 1+sizeof(uint32_t), 1+sizeof(uint32_t)};
+const int const g_packet_size[PACKET_MAX] = {1+4*sizeof(float), 1+3*sizeof(int16_t), 1+3*sizeof(int16_t),
+    1+3*sizeof(int16_t), 1+3, 1+3, 1+1, 1+sizeof(uint32_t), 1+sizeof(uint32_t)};
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -54,8 +54,8 @@ int packet_pack(packet_p packet, unsigned char *out)
         case PACKET_GYRO:
         case PACKET_MAG:
             for (int i = 0; i < 3; i++) {
-                tmp = cpu_to_be32(*(uint32_t *)&packet->data.sensor[i]);
-                out_len += pack_seq((unsigned char *)&tmp, sizeof(uint32_t), out+out_len);
+                tmp = cpu_to_be16(*(int16_t *)&packet->data.sensor[i]);
+                out_len += pack_seq((unsigned char *)&tmp, sizeof(int16_t), out+out_len);
             }
             break;
             
