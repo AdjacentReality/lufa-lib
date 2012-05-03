@@ -31,7 +31,6 @@ class Tracker(object):
         t = ord(packet[0])
     
         if t == PACKET_QUAT:
-            print "%d %d" % (t, len(packet))
             return struct.unpack('!Bffff', packet)
         elif t == PACKET_ACC or t == PACKET_GYRO or t == PACKET_MAG:
             return struct.unpack('!Bfff', packet)
