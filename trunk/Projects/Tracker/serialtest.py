@@ -12,7 +12,8 @@ PACKET_COLOR = 4
 PACKET_BLINK = 5
 PACKET_IR = 6
 PACKET_VERSION = 7
-PACKET_MAX = 8
+PACKET_ID = 8
+PACKET_MAX = 9
 
 class Tracker(object):
     def __init__(self, port):
@@ -24,9 +25,27 @@ class Tracker(object):
         self.ser.open()
         self.ser.flushInput()
         # read out any partially complete packet
-        self.read_packet()
+        self.read_serial()
+    
+    def parse_packet(self, packet):
+        t = ord(packet[0])
+    
+        if t == PACKET_QUAT:
+            print "%d %d" % (t, len(packet))
+            return struct.unpack('!Bffff', packet)
+        elif t == PACKET_ACC or t == PACKET_GYRO or t == PACKET_MAG:
+            return struct.unpack('!Bfff', packet)
+        elif t == PACKET_COLOR or t == PACKET_BLINK:
+            return struct.unpack('!BBBB', packet)
+        elif t == PACKET_IR:
+            return struct.unpack('!BB', packet)
+        elif t == PACKET_VERSION or t == PACKET_ID:
+            return struct.unpack('!BI', packet)
+        else:
+            print "Unknown packet type %d" % t
+            return None
         
-    def read_packet(self):
+    def read_serial(self):
         line = []
     
         while True:
@@ -42,7 +61,12 @@ class Tracker(object):
             else:
                 line.append(c)
                 
-        return ''.join(line)
+        return line
+        
+    def read_packet(self):
+        line = self.read_serial()
+                
+        return self.parse_packet(''.join(line))
         
     def write_packet(self, packet):
         slipped = [];
@@ -63,10 +87,6 @@ class Tracker(object):
     def set_color(self, rgb):
         packed = struct.pack('!BBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2])
         self.write_packet(packed)
-        
-    def quaternion(self):
-        packet = self.read_packet()
-        return struct.unpack('!Bffff', packet)
 
 if __name__ == '__main__':
     port = '/dev/ttyACM0'
@@ -75,6 +95,5 @@ if __name__ == '__main__':
     tracker = Tracker(port)
     tracker.set_color((255, 0, 255))
     while True:
-        tracker.set_color((255, 0, 255))
-        print tracker.quaternion()
+        print tracker.read_packet()
 
