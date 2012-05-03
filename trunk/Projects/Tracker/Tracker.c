@@ -200,9 +200,18 @@ void CheckSensors(void)
     gf[1] = GYRO_TO_RADIANS(g[1]);
     gf[2] = GYRO_TO_RADIANS(g[2]);
     
+    // offset and scale away some of the hard iron and soft iron error
+#if TRACKER_BOARD_REVISION == 1
+    // TODO: find the default calibration for rev 1
     mf[0] = (float)m[0]/1100.0;
     mf[1] = (float)m[1]/1100.0;
     mf[2] = (float)m[2]/980.0;
+#elif TRACKER_BOARD_REVISION == 2
+    // TODO: store this in EEPROM and make it configurable after calibration
+    mf[0] = ((float)m[0]-124.0)/574.0;
+    mf[1] = ((float)m[1]+18.9)/596.0;
+    mf[2] = ((float)m[2]-46.4)/518.0;
+#endif /* TRACKER_BOARD_REVISION */
     
     // to avoid the frequency measurement from impacting itself
     int elapsed = TCNT1;
