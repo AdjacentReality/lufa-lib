@@ -8,8 +8,18 @@
 #define ESC_END         0xDC    /* ESC ESC_END means END data byte */
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
 
-const int const g_packet_size[PACKET_MAX] = {1+4*sizeof(float), 1+3*sizeof(int16_t), 1+3*sizeof(int16_t),
-    1+3*sizeof(int16_t), 1+3, 1+3, 1+1, 1+1, 1+sizeof(uint32_t), 1+sizeof(uint32_t)};
+const int const g_packet_size[PACKET_MAX] =
+{1+4*sizeof(float),     // PACKET_QUAT
+ 1+3*sizeof(int16_t),   // PACKET_ACC
+ 1+3*sizeof(int16_t),   // PACKET_GYRO
+ 1+3*sizeof(int16_t),   // PACKET_MAG
+ 1+3,                   // PACKET_COLOR
+ 1+3,                   // PACKET_BLINK
+ 1+1,                   // PACKET_IR
+ 1+1,                   // PACKET_STREAM
+ 1+sizeof(uint32_t),    // PACKET_VERSION
+ 1+sizeof(uint32_t),    // PACKET_ID
+ 1+6*sizeof(float)};    // PACKET_CAL
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -42,6 +52,7 @@ int packet_pack(packet_p packet, unsigned char *out)
     uint32_t tmp;
     *out = packet->type;
     
+    // We only care about sending certain packet types
     switch(packet->type) {
         case PACKET_QUAT:
             for (int i = 0; i < 4; i++) {
@@ -59,19 +70,6 @@ int packet_pack(packet_p packet, unsigned char *out)
             }
             break;
             
-        case PACKET_COLOR:
-        case PACKET_BLINK:
-            out_len += pack_seq(packet->data.color, 3, out+out_len);
-            break;
-            
-        case PACKET_IR:
-            out_len += pack_seq(packet->data.color, 1, out+out_len);
-            break;
-            
-        case PACKET_STREAM:
-            out_len += pack_seq((unsigned char *)&packet->data.bitmask, 1, out+out_len);
-            break;
-            
         case PACKET_VERSION:
         case PACKET_ID:
             tmp = cpu_to_be32(packet->data.version);
@@ -87,20 +85,40 @@ int packet_pack(packet_p packet, unsigned char *out)
 
 static bool packet_parse(packet_p packet, unsigned char *buf, int len)
 {
+    int i;
+
+    // Check packet validity
+    if ((buf[0] >= PACKET_MAX) || (len != g_packet_size[buf[0]]))
+        return 0;
+    
     packet->type = buf[0];
+    // We only care about receiving certain packet types
+    switch (buf[0]) {
+        case PACKET_COLOR:
+        case PACKET_BLINK:
+            packet->data.color[0] = buf[1];
+            packet->data.color[1] = buf[2];
+            packet->data.color[2] = buf[3];
+            break;
+            
+        case PACKET_STREAM:
+            packet->data.bitmask = buf[1];
+            break;
+            
+        case PACKET_CAL:
+            for (i = 0; i < 6; i++) {
+                // Type punning the uint32_t to a float through the union.  This
+                // is not strictly legal in C99, but it is common enough that
+                // all compilers seem to allow it.
+                packet->data.net[i] = be32_to_cpu(*(uint32_t *)(buf+i*4+1));
+            }
+            break;
+            
+        default:
+            return 0;
+    }      
     
-    if (((buf[0] == PACKET_COLOR) || (buf[0] == PACKET_BLINK)) &&
-        (len == g_packet_size[PACKET_COLOR])) {
-        packet->data.color[0] = buf[1];
-        packet->data.color[1] = buf[2];
-        packet->data.color[2] = buf[3];
-        return 1;
-    } else if ((buf[0] == PACKET_STREAM)) {
-        packet->data.bitmask = buf[1];
-        return 1;
-    }
-    
-    return 0;
+    return 1;
 }
 
 static unsigned char unpacked_buf[UNPACKED_MAX_SIZE+1];

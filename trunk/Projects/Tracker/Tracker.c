@@ -42,6 +42,7 @@
 #include "MadgwickAHRS.h"
 #include "packet.h"
 #include "uart.h"
+#include "calibration.h"
 
 /** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
 static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
@@ -118,6 +119,8 @@ void SetupHardware(void)
 
 static void SetupSensors(void)
 {
+    calibration_load();
+
 	l3g_init();
 	lsm303_init();
 }
@@ -162,6 +165,11 @@ static void ParseByte(unsigned char c)
                 break;
             case PACKET_STREAM:
                 streaming_mode = p.data.bitmask;
+                break;
+            case PACKET_CAL:
+                calibration_store(p.data.calibration[0], p.data.calibration[1],
+                    p.data.calibration[2], p.data.calibration[3],
+                    p.data.calibration[4], p.data.calibration[5]);
                 break;
         }
     }
@@ -210,17 +218,7 @@ void CheckSensors(void)
         gf[2] = GYRO_TO_RADIANS(g[2]);
         
         // offset and scale away some of the hard iron and soft iron error
-#if TRACKER_BOARD_REVISION == 1
-        // TODO: find the default calibration for rev 1
-        mf[0] = (float)m[0]/1100.0;
-        mf[1] = (float)m[1]/1100.0;
-        mf[2] = (float)m[2]/980.0;
-#elif TRACKER_BOARD_REVISION == 2
-        // TODO: store this in EEPROM and make it configurable after calibration
-        mf[0] = ((float)m[0]-124.0)/574.0;
-        mf[1] = ((float)m[1]+18.9)/596.0;
-        mf[2] = ((float)m[2]-46.4)/518.0;
-#endif /* TRACKER_BOARD_REVISION */
+        calibration_apply(m[0], &mf[0], m[1], &mf[1], m[2], &mf[2]);
 
         // to avoid the frequency measurement from impacting itself
         int elapsed = TCNT1;

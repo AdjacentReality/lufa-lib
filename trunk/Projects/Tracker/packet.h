@@ -15,12 +15,15 @@ enum packet_type {
     PACKET_STREAM = 7,
     PACKET_VERSION = 8,
     PACKET_ID = 9,
-    PACKET_MAX = 10
+    PACKET_CAL = 10,
+    PACKET_MAX = 11
 };
 
 typedef struct packet_s {
     unsigned char type;
     union {
+        float calibration[6];
+        uint32_t net[6];
         float quat[4];
         int16_t sensor[3];
         unsigned char color[3];
@@ -30,9 +33,9 @@ typedef struct packet_s {
 } packet_t, *packet_p;
 
 // Max unpacked size
-#define UNPACKED_MAX_SIZE (1+4*sizeof(float))
+#define UNPACKED_MAX_SIZE (1+6*sizeof(float))
 // Maximum size of a packet_t as a SLIP frame
-#define PACKET_MAX_SIZE (2+4*sizeof(float)*2)
+#define PACKET_MAX_SIZE (1+UNPACKED_MAX_SIZE*2)
 
 // Pack into a buffer in network order with SLIP framing/escaping
 // Assumes the out buffer is at least PACKET_MAX_SIZE.

@@ -14,7 +14,8 @@ PACKET_IR = 6
 PACKET_STREAM = 7
 PACKET_VERSION = 8
 PACKET_ID = 9
-PACKET_MAX = 10
+PACKET_CAL = 10
+PACKET_MAX = 11
 
 class Tracker(object):
     def __init__(self, port):
@@ -92,6 +93,10 @@ class Tracker(object):
         mask = (quat << PACKET_QUAT) | (acc << PACKET_ACC) | (gyro << PACKET_GYRO) |\
                 (mag << PACKET_MAG)
         packed = struct.pack('!BB', PACKET_STREAM, mask)
+        self.write_packet(packed)
+        
+    def set_calibration(self, ox, oy, oz, sx, sy, sz):
+        packed = struct.pack('!Bffffff', PACKET_CAL, ox, oy, oz, sx, sy, sz)
         self.write_packet(packed)
 
 if __name__ == '__main__':
