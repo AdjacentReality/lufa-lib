@@ -55,6 +55,11 @@ static const unsigned char LEDMASK_USB_READY[3] = {0, 255, 0};
 /** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
 static const unsigned char LEDMASK_USB_ERROR[3] = {255, 0, 0};
 
+// Default to streaming just quaternions
+static uint8_t streaming_mode = (1 << PACKET_QUAT);
+
+#define SHOULD_STREAM(m) (streaming_mode & (1 << m))
+
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
  *  within a device can be differentiated from one another.
@@ -152,9 +157,11 @@ static void ParseByte(unsigned char c)
     // use the packets as they complete
     if (packet_unpack(&p, c)) {
         switch(p.type) {
-            // for now, we only care about led setting packets
             case PACKET_COLOR:
                 led_set_array(p.data.color);
+                break;
+            case PACKET_STREAM:
+                streaming_mode = p.data.bitmask;
                 break;
         }
     }
@@ -196,32 +203,35 @@ void CheckSensors(void)
     lsm303_m_read(&m[0], &m[1], &m[2]);
     lsm303_a_read(&a[0], &a[1], &a[2]);
     
-    gf[0] = GYRO_TO_RADIANS(g[0]);
-    gf[1] = GYRO_TO_RADIANS(g[1]);
-    gf[2] = GYRO_TO_RADIANS(g[2]);
-    
-    // offset and scale away some of the hard iron and soft iron error
+    // avoid the massive cpu cost if we aren't actually sending quaternions
+    if (SHOULD_STREAM(PACKET_QUAT)) {
+        gf[0] = GYRO_TO_RADIANS(g[0]);
+        gf[1] = GYRO_TO_RADIANS(g[1]);
+        gf[2] = GYRO_TO_RADIANS(g[2]);
+        
+        // offset and scale away some of the hard iron and soft iron error
 #if TRACKER_BOARD_REVISION == 1
-    // TODO: find the default calibration for rev 1
-    mf[0] = (float)m[0]/1100.0;
-    mf[1] = (float)m[1]/1100.0;
-    mf[2] = (float)m[2]/980.0;
+        // TODO: find the default calibration for rev 1
+        mf[0] = (float)m[0]/1100.0;
+        mf[1] = (float)m[1]/1100.0;
+        mf[2] = (float)m[2]/980.0;
 #elif TRACKER_BOARD_REVISION == 2
-    // TODO: store this in EEPROM and make it configurable after calibration
-    mf[0] = ((float)m[0]-124.0)/574.0;
-    mf[1] = ((float)m[1]+18.9)/596.0;
-    mf[2] = ((float)m[2]-46.4)/518.0;
+        // TODO: store this in EEPROM and make it configurable after calibration
+        mf[0] = ((float)m[0]-124.0)/574.0;
+        mf[1] = ((float)m[1]+18.9)/596.0;
+        mf[2] = ((float)m[2]-46.4)/518.0;
 #endif /* TRACKER_BOARD_REVISION */
-    
-    // to avoid the frequency measurement from impacting itself
-    int elapsed = TCNT1;
-    TCNT1 = 0;
-    float freq = ((float)F_CPU)/(1024.0*(float)(elapsed));
-    
-    // the acc values get normalized inside, so we should be ok not scaling
-    // mag is scaled because x/y has a different sensitivity than z
-    MadgwickAHRSupdate(freq, gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
-                        mf[0], mf[1], mf[2]);
+
+        // to avoid the frequency measurement from impacting itself
+        int elapsed = TCNT1;
+        TCNT1 = 0;
+        float freq = ((float)F_CPU)/(1024.0*(float)(elapsed));
+
+        // the acc values get normalized inside, so we should be ok not scaling
+        // mag is scaled because x/y has a different sensitivity than z
+        MadgwickAHRSupdate(freq, gf[0], gf[1], gf[2], (float)a[0], (float)a[1], (float)a[2],
+                            mf[0], mf[1], mf[2]);
+    }
 }
 
 static void PackAndSend(packet_p p)
@@ -237,21 +247,39 @@ static void PackAndSend(packet_p p)
 void SendData(void)
 {
     packet_t p;
-    p.type = PACKET_QUAT;
-    p.data.quat[0] = q0;
-    p.data.quat[1] = q1;
-    p.data.quat[2] = q2;
-    p.data.quat[3] = q3;
-    PackAndSend(&p);
     
-    // TODO: add capability to set which packet types are sent continuously
-    if (0) {
+    if (SHOULD_STREAM(PACKET_QUAT)) {
+        p.type = PACKET_QUAT;
+        p.data.quat[0] = q0;
+        p.data.quat[1] = q1;
+        p.data.quat[2] = q2;
+        p.data.quat[3] = q3;
+        PackAndSend(&p);
+    }
+    
+    if (SHOULD_STREAM(PACKET_ACC)) {
+        p.type = PACKET_ACC;
+        p.data.sensor[0] = a[0];
+        p.data.sensor[1] = a[1];
+        p.data.sensor[2] = a[2];
+        PackAndSend(&p);
+    }
+    
+    if (SHOULD_STREAM(PACKET_GYRO)) {
+        p.type = PACKET_GYRO;
+        p.data.sensor[0] = g[0];
+        p.data.sensor[1] = g[1];
+        p.data.sensor[2] = g[2];
+        PackAndSend(&p);
+    }
+    
+    if (SHOULD_STREAM(PACKET_MAG)) {
         p.type = PACKET_MAG;
         p.data.sensor[0] = m[0];
         p.data.sensor[1] = m[1];
         p.data.sensor[2] = m[2];
         PackAndSend(&p);
-    }   
+    }
 }
 
 /** Event handler for the library USB Connection event. */

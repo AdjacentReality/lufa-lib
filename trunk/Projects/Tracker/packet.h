@@ -12,9 +12,10 @@ enum packet_type {
     PACKET_COLOR = 4,
     PACKET_BLINK = 5,
     PACKET_IR = 6,
-    PACKET_VERSION = 7,
-    PACKET_ID = 8,
-    PACKET_MAX = 9
+    PACKET_STREAM = 7,
+    PACKET_VERSION = 8,
+    PACKET_ID = 9,
+    PACKET_MAX = 10
 };
 
 typedef struct packet_s {
@@ -23,6 +24,7 @@ typedef struct packet_s {
         float quat[4];
         int16_t sensor[3];
         unsigned char color[3];
+        uint8_t bitmask;
         uint32_t version;
     } data;
 } packet_t, *packet_p;

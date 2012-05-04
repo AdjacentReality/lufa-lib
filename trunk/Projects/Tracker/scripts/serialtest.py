@@ -11,9 +11,10 @@ PACKET_MAG = 3
 PACKET_COLOR = 4
 PACKET_BLINK = 5
 PACKET_IR = 6
-PACKET_VERSION = 7
-PACKET_ID = 8
-PACKET_MAX = 9
+PACKET_STREAM = 7
+PACKET_VERSION = 8
+PACKET_ID = 9
+PACKET_MAX = 10
 
 class Tracker(object):
     def __init__(self, port):
@@ -86,6 +87,12 @@ class Tracker(object):
     def set_color(self, rgb):
         packed = struct.pack('!BBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2])
         self.write_packet(packed)
+        
+    def set_streaming_mode(self, quat, acc, gyro, mag):
+        mask = (quat << PACKET_QUAT) | (acc << PACKET_ACC) | (gyro << PACKET_GYRO) |\
+                (mag << PACKET_MAG)
+        packed = struct.pack('!BB', PACKET_STREAM, mask)
+        self.write_packet(packed)
 
 if __name__ == '__main__':
     port = '/dev/ttyACM0'
@@ -93,6 +100,7 @@ if __name__ == '__main__':
         port = sys.argv[1]
     tracker = Tracker(port)
     tracker.set_color((255, 0, 255))
+    tracker.set_streaming_mode(1, 0, 0, 0)
     while True:
         print tracker.read_packet()
 

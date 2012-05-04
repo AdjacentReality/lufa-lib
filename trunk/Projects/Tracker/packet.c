@@ -9,7 +9,7 @@
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
 
 const int const g_packet_size[PACKET_MAX] = {1+4*sizeof(float), 1+3*sizeof(int16_t), 1+3*sizeof(int16_t),
-    1+3*sizeof(int16_t), 1+3, 1+3, 1+1, 1+sizeof(uint32_t), 1+sizeof(uint32_t)};
+    1+3*sizeof(int16_t), 1+3, 1+3, 1+1, 1+1, 1+sizeof(uint32_t), 1+sizeof(uint32_t)};
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -63,9 +63,15 @@ int packet_pack(packet_p packet, unsigned char *out)
         case PACKET_BLINK:
             out_len += pack_seq(packet->data.color, 3, out+out_len);
             break;
+            
         case PACKET_IR:
             out_len += pack_seq(packet->data.color, 1, out+out_len);
             break;
+            
+        case PACKET_STREAM:
+            out_len += pack_seq((unsigned char *)&packet->data.bitmask, 1, out+out_len);
+            break;
+            
         case PACKET_VERSION:
         case PACKET_ID:
             tmp = cpu_to_be32(packet->data.version);
@@ -83,12 +89,14 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
 {
     packet->type = buf[0];
     
-    // For now, we only care about reading color setting messages
     if (((buf[0] == PACKET_COLOR) || (buf[0] == PACKET_BLINK)) &&
         (len == g_packet_size[PACKET_COLOR])) {
         packet->data.color[0] = buf[1];
         packet->data.color[1] = buf[2];
         packet->data.color[2] = buf[3];
+        return 1;
+    } else if ((buf[0] == PACKET_STREAM)) {
+        packet->data.bitmask = buf[1];
         return 1;
     }
     
