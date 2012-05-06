@@ -44,7 +44,7 @@ from numpy import linalg
 from serialtest import *
 
 port = '/dev/ttyACM0'
-num_samples = 100000
+num_samples = 50000
 should_plot = False
 
 def usage():
