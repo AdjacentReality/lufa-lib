@@ -72,6 +72,7 @@ ARCH = AVR8
 # "Board" inside the application directory.
 BOARD = USER
 
+TRACKER_BOARD_REVISION = 2
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the
@@ -127,7 +128,6 @@ LUFA_OPTS += -D FIXED_CONTROL_ENDPOINT_SIZE=8
 LUFA_OPTS += -D FIXED_NUM_CONFIGURATIONS=1
 LUFA_OPTS += -D USE_FLASH_DESCRIPTORS
 LUFA_OPTS += -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENABLED | USB_OPT_AUTO_PLL)"
-LUFA_OPTS += -D TRACKER_BOARD_REVISION=2
 
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
@@ -194,6 +194,7 @@ CSTANDARD = -std=c99
 CDEFS  = -DF_CPU=$(F_CPU)UL
 CDEFS += -DF_USB=$(F_USB)UL
 CDEFS += -DBOARD=BOARD_$(BOARD) -DARCH=ARCH_$(ARCH)
+CDEFS += -DTRACKER_BOARD_REVISION=$(TRACKER_BOARD_REVISION)
 CDEFS += $(LUFA_OPTS)
 
 
