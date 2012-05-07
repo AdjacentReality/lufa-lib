@@ -9,26 +9,31 @@ enum packet_type {
     PACKET_ACC = 1,
     PACKET_GYRO = 2,
     PACKET_MAG = 3,
-    PACKET_COLOR = 4,
-    PACKET_BLINK = 5,
-    PACKET_IR = 6,
-    PACKET_STREAM = 7,
-    PACKET_VERSION = 8,
-    PACKET_ID = 9,
-    PACKET_CAL = 10,
-    PACKET_MAX = 11
+    PACKET_TEMPERATURE = 4,
+    PACKET_GPIO = 5,
+    PACKET_COLOR = 6,
+    PACKET_BLINK = 7,
+    PACKET_IR = 8,
+    PACKET_STREAM = 9,
+    PACKET_VERSION = 10,
+    PACKET_ID = 11,
+    PACKET_CAL = 12,
+    PACKET_GPIO_DDR = 13,
+    PACKET_GPIO_PORT = 14,
+    PACKET_MAX = 15
 };
 
 typedef struct packet_s {
     unsigned char type;
     union {
-        float calibration[6];
         uint32_t net[6];
         float quat[4];
         int16_t sensor[3];
+        float temperature;
         unsigned char color[3];
         uint8_t bitmask;
         uint32_t version;
+        float calibration[6];
     } data;
 } packet_t, *packet_p;
 

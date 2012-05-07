@@ -8,18 +8,23 @@
 #define ESC_END         0xDC    /* ESC ESC_END means END data byte */
 #define ESC_ESC         0xDD    /* ESC ESC_ESC means ESC data byte */
 
+// Sizes to expect on incoming packets
 const int const g_packet_size[PACKET_MAX] =
-{1+4*sizeof(float),     // PACKET_QUAT
- 1+3*sizeof(int16_t),   // PACKET_ACC
- 1+3*sizeof(int16_t),   // PACKET_GYRO
- 1+3*sizeof(int16_t),   // PACKET_MAG
+{1,                     // PACKET_QUAT
+ 1,                     // PACKET_ACC
+ 1,                     // PACKET_GYRO
+ 1,                     // PACKET_MAG
+ 1,                     // PACKET_TEMPERATURE
+ 1,                     // PACKET_GPIO
  1+3,                   // PACKET_COLOR
  1+3,                   // PACKET_BLINK
  1+1,                   // PACKET_IR
  1+1,                   // PACKET_STREAM
- 1+sizeof(uint32_t),    // PACKET_VERSION
- 1+sizeof(uint32_t),    // PACKET_ID
- 1+6*sizeof(float)};    // PACKET_CAL
+ 1,                     // PACKET_VERSION
+ 1,                     // PACKET_ID
+ 1+6*sizeof(float),     // PACKET_CAL
+ 1+1,                   // PACKET_GPIO_DDR
+ 1+1};                  // PACKET_GPIO_PORT
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -70,6 +75,15 @@ int packet_pack(packet_p packet, unsigned char *out)
             }
             break;
             
+        case PACKET_TEMPERATURE:
+            tmp = cpu_to_be32(*(uint32_t *)&packet->data.temperature);
+            out_len += pack_seq((unsigned char *)&tmp, sizeof(uint32_t), out+out_len);
+            break;
+            
+        case PACKET_GPIO:
+            out_len += pack_seq((unsigned char *)&packet->data.bitmask, 1, out+out_len);
+            break;
+            
         case PACKET_VERSION:
         case PACKET_ID:
             tmp = cpu_to_be32(packet->data.version);
@@ -94,6 +108,18 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
     packet->type = buf[0];
     // We only care about receiving certain packet types
     switch (buf[0]) {
+        case PACKET_QUAT:
+        case PACKET_ACC:
+        case PACKET_GYRO:
+        case PACKET_MAG:
+        case PACKET_TEMPERATURE:
+        case PACKET_GPIO:
+        case PACKET_VERSION:
+        case PACKET_ID:
+            // no payload on these when incoming, 
+            // just tells us we need to send this packet type back
+            break;
+    
         case PACKET_COLOR:
         case PACKET_BLINK:
             packet->data.color[0] = buf[1];
@@ -101,6 +127,8 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
             packet->data.color[2] = buf[3];
             break;
             
+        case PACKET_GPIO_DDR:
+        case PACKET_GPIO_PORT:
         case PACKET_STREAM:
             packet->data.bitmask = buf[1];
             break;

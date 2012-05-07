@@ -43,6 +43,7 @@
 #include "packet.h"
 #include "uart.h"
 #include "calibration.h"
+#include "gpio.h"
 
 /** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
 static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
@@ -100,6 +101,7 @@ void SetupHardware(void)
 	/* Hardware Initialization */
 	twi_init();
 	led_init();
+	gpio_init();
 	USB_Init();
 	uart_init(38400, false);
 	
@@ -160,16 +162,28 @@ static void ParseByte(unsigned char c)
     // use the packets as they complete
     if (packet_unpack(&p, c)) {
         switch(p.type) {
+            // TODO: the rest of the packet types
+        
             case PACKET_COLOR:
                 led_set_array(p.data.color);
                 break;
+                
             case PACKET_STREAM:
                 streaming_mode = p.data.bitmask;
                 break;
+                
             case PACKET_CAL:
                 calibration_store(p.data.calibration[0], p.data.calibration[1],
                     p.data.calibration[2], p.data.calibration[3],
                     p.data.calibration[4], p.data.calibration[5]);
+                break;
+                
+            case PACKET_GPIO_DDR:
+                gpio_set_ddr(p.data.bitmask);
+                break;
+                
+            case PACKET_GPIO_PORT:
+                gpio_set_port(p.data.bitmask);
                 break;
         }
     }
@@ -276,6 +290,14 @@ void SendData(void)
         p.data.sensor[0] = m[0];
         p.data.sensor[1] = m[1];
         p.data.sensor[2] = m[2];
+        PackAndSend(&p);
+    }
+    
+    // TODO: temperature support
+    
+    if (SHOULD_STREAM(PACKET_GPIO)) {
+        p.type = PACKET_GPIO;
+        p.data.bitmask = gpio_pin();
         PackAndSend(&p);
     }
 }

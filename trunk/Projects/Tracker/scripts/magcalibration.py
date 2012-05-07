@@ -116,7 +116,7 @@ if __name__ == '__main__':
     z = []
 
     # only get magnetometer data
-    tracker.set_streaming_mode(0, 0, 0, 1)
+    tracker.set_streaming_mode(0, 0, 0, 1, 0, 0)
 
     while len(x) < num_samples:
         packet = tracker.read_packet()
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     [center, radii] = calibrate(numpy.array(x), numpy.array(y), numpy.array(z))
     
     # set the tracker back into quaternion mode
-    tracker.set_streaming_mode(1, 0, 0, 0)
+    tracker.set_streaming_mode(1, 0, 0, 0, 0, 0)
     
     print "Center of ellipse:\n %s" % str(center)
     print "Ellipse radii:\n %s\n" % str(radii)
