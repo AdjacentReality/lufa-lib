@@ -88,6 +88,14 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 
 bool useUSB = 0;
 
+static inline void SetPower(bool power)
+{
+#ifdef LTC3554
+	// Enable or disable buck regulator 1
+	PORTB = (PORTB & ~(1 << 6)) | (power << 6);
+#endif /* LTC3554 */
+}
+
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
 {
@@ -113,10 +121,10 @@ void SetupHardware(void)
 	PORTB |= (1 << 7);
 	
 #ifdef LTC3554
-	// Enable buck regulator 1
+	// Set output pin for buck regulator 1
 	DDRB |= (1 << 6);
-	PORTB |= (1 << 6);
 #endif /* LTC3554 */
+	SetPower(1);
 }
 
 static void SetupSensors(void)
@@ -184,6 +192,10 @@ static void ParseByte(unsigned char c)
                 
             case PACKET_GPIO_PORT:
                 gpio_set_port(p.data.bitmask);
+                break;
+                
+            case PACKET_POWER:
+                SetPower(p.data.bitmask != 0);
                 break;
         }
     }

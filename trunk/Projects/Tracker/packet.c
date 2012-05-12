@@ -24,7 +24,8 @@ const int const g_packet_size[PACKET_MAX] =
  1,                     // PACKET_ID
  1+6*sizeof(float),     // PACKET_CAL
  1+1,                   // PACKET_GPIO_DDR
- 1+1};                  // PACKET_GPIO_PORT
+ 1+1,                   // PACKET_GPIO_PORT
+ 1+1};                  // PACKET_POWER
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -129,6 +130,7 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
             
         case PACKET_GPIO_DDR:
         case PACKET_GPIO_PORT:
+        case PACKET_POWER:
         case PACKET_STREAM:
             packet->data.bitmask = buf[1];
             break;

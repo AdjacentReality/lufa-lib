@@ -19,7 +19,8 @@ PACKET_ID = 11
 PACKET_CAL = 12
 PACKET_GPIO_DDR = 13
 PACKET_GPIO_PORT = 14
-PACKET_MAX = 15
+PACKET_POWER = 15
+PACKET_MAX = 16
 
 class Tracker(object):
     def __init__(self, port):
@@ -113,6 +114,10 @@ class Tracker(object):
         mask = (f0 != 0) | ((f1 != 0) << 1) | ((f4 != 0) << 4) |\
                ((f5 != 0) << 5) | ((f6 != 0) << 6) | ((f7 != 0) << 7)
         packed = struct.pack('!BB', PACKET_GPIO_PORT, mask)
+        self.write_packet(packed)
+        
+    def set_power(self, power):
+        packed = struct.pack('!BB', PACKET_POWER, power)
         self.write_packet(packed)
 
 if __name__ == '__main__':

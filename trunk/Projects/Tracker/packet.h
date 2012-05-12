@@ -20,7 +20,8 @@ enum packet_type {
     PACKET_CAL = 12,
     PACKET_GPIO_DDR = 13,
     PACKET_GPIO_PORT = 14,
-    PACKET_MAX = 15
+    PACKET_POWER = 15,
+    PACKET_MAX = 16
 };
 
 typedef struct packet_s {
