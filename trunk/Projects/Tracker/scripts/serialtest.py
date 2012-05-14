@@ -37,20 +37,25 @@ class Tracker(object):
     def parse_packet(self, packet):
         t = ord(packet[0])
     
-        if t == PACKET_QUAT:
-            return struct.unpack('!Bffff', packet)
-        elif t == PACKET_ACC or t == PACKET_GYRO or t == PACKET_MAG:
-            return struct.unpack('!Bhhh', packet)
-        elif t == PACKET_COLOR or t == PACKET_BLINK:
-            return struct.unpack('!BBBB', packet)
-        elif t == PACKET_GPIO or t == PACKET_IR:
-            return struct.unpack('!BB', packet)
-        elif t == PACKET_VERSION or t == PACKET_ID:
-            return struct.unpack('!BI', packet)
-        else:
-            print "Unknown packet type %d" % t
-            return None
-        
+        try:
+            if t == PACKET_QUAT:
+                return struct.unpack('!Bffff', packet)
+            elif t == PACKET_ACC or t == PACKET_GYRO or t == PACKET_MAG:
+                return struct.unpack('!Bhhh', packet)
+            elif t == PACKET_COLOR or t == PACKET_BLINK:
+                return struct.unpack('!BBBB', packet)
+            elif t == PACKET_GPIO or t == PACKET_IR:
+                return struct.unpack('!BB', packet)
+            elif t == PACKET_VERSION or t == PACKET_ID:
+                return struct.unpack('!BI', packet)
+            else:
+                print "Unknown packet type %d" % t
+                return None
+        except struct.error as ex:
+            print "Failed to parse packet:", ex
+            
+        return None
+            
     def read_serial(self):
         line = []
     
