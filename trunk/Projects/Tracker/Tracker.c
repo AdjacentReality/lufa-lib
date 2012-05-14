@@ -62,6 +62,8 @@ static uint8_t streaming_mode = (1 << PACKET_QUAT);
 
 #define SHOULD_STREAM(m) (streaming_mode & (1 << m))
 
+static bool demo_mode = true;
+
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
  *  within a device can be differentiated from one another.
@@ -135,6 +137,58 @@ static void SetupSensors(void)
 	lsm303_init();
 }
 
+static void UpdateDemo(void)
+{
+    float qq2 = q2*q2;
+    float roll = atan2f(2.0*(q0*q1+q2*q3), 1.0-2.0*(q1*q1+qq2));
+    float rotation = atan2f(2.0*(q0*q3+q1*q2), 1.0-2.0*(qq2+q3*q3));
+    
+    // HSV to RGB from http://www.cs.rit.edu/~ncs/color/t_convert.html
+    float h = (rotation+M_PI)/(M_PI/3.0);
+    float v = 255.0*(1.0-fabsf(roll)/M_PI);
+    int i = floorf(h);
+    float f = h - i;
+    uint8_t q = v*(1.0 - f);
+    uint8_t t = v*(1.0 - (1.0 - f));
+    uint8_t r, g, b;
+    
+    switch (i) {
+        case 0:
+            r = v;
+            g = t;
+            b = 0;
+            break;
+        case 1:
+            r = q;
+            g = v;
+            b = 0;
+            break;
+        case 2:
+            r = 0;
+            g = v;
+            b = t;
+            break;
+        case 3:
+            r = 0;
+            g = q;
+            b = v;
+            break;
+        case 4:
+            r = t;
+            g = 0;
+            b = v;
+            break;
+        default:
+            r = v;
+            g = 0;
+            b = q;
+            break;
+    }
+    
+    if (b < 64 && r < 192) b = 0;
+    led_set_colors(r, g, b);
+}
+
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
  */
@@ -155,6 +209,8 @@ int main(void)
 		CheckSensors();
 		SendData();
         
+        if (demo_mode) UpdateDemo();
+        
         /* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
         if (!useUSB) // we otherwise grab bytes in ReadData if we are using USB
     		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
@@ -169,6 +225,8 @@ static void ParseByte(unsigned char c)
     packet_t p;
     // use the packets as they complete
     if (packet_unpack(&p, c)) {
+        // exit demo mode if we get a packet
+        demo_mode = false;
         switch(p.type) {
             // TODO: the rest of the packet types
         
@@ -336,6 +394,7 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 
 	led_set_array(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
 	useUSB = ConfigSuccess;
+    if (ConfigSuccess) demo_mode = false;
 }
 
 /** Event handler for the library USB Control Request reception event. */
