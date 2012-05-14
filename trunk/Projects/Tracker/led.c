@@ -10,9 +10,9 @@
 void led_init(void)
 {
     // set all used pins as outputs
-    DDRC |= (1 << LED_GREEN) | (1 << LED_IR);
+    DDRC |= (1 << LED_GREEN);// | (1 << LED_IR);
     // we're sinking all LEDs into the pins, so set them high to turn off
-    PORTC |= (1 << LED_GREEN) | (1 << LED_IR);
+    PORTC |= (1 << LED_GREEN);// | (1 << LED_IR);
     DDRD |= (1 << LED_RED) | (1 << LED_BLUE);
     PORTD |= (1 << LED_RED) | (1 << LED_BLUE);
     
@@ -23,11 +23,11 @@ void led_init(void)
     
     // Timer 4 setup
     OCR4C = 0xFF; // top at 256 counts
-    OCR4A = 0xFF; // start IR at off
+ //   OCR4A = 0xFF; // start IR at off
     OCR4D = 0xFF; // start red at off
     // dead time at clock/8, pwm at full clock to maximize dead time length
     TCCR4B = (1 << DTPS41) | (1 << DTPS40) | (1 << CS40);
-    TCCR4A = (1 << COM4A1) | (1 << PWM4A); // enable clear on match PWM for IR
+//    TCCR4A = (1 << COM4A1) | (1 << PWM4A); // enable clear on match PWM for IR
     TCCR4C = (1 << COM4D1) | (1 << PWM4D); // enable clear on match PWM for red
 }
 
@@ -64,6 +64,6 @@ void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
 
 void led_set_ir(unsigned char ir)
 {
-    OCR4A = 0xFF - ir;
+//    OCR4A = 0xFF - ir;
 }
 
