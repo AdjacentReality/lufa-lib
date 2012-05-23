@@ -41,7 +41,7 @@ import getopt
 import sys
 import numpy
 from numpy import linalg
-from serialtest import *
+from tracker import *
 
 port = '/dev/ttyACM0'
 num_samples = 50000
