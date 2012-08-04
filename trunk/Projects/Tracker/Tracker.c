@@ -112,7 +112,7 @@ void SetupHardware(void)
 	
 	/* Hardware Initialization */
 	twi_init();
-//	led_init();
+	led_init();
 //	gpio_init();
 	USB_Init();
 	uart_init(38400, false);

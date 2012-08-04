@@ -2,13 +2,21 @@
 #include <avr/io.h>
 #include <stdlib.h>
 
+#if TRACKER_BOARD_REVISION == 2
 #define LED_RED     PORTD7  // 4D
 #define LED_GREEN   PORTC6  // 3A
 #define LED_BLUE    PORTD6  // !4D
 #define LED_IR      PORTC7  // 4A
+#elif TRACKER_BOARD_REVISION == 3
+#define LED_RED     PORTD7  // 4D
+#define LED_GREEN   PORTC7  // 4A
+#define LED_BLUE    PORTB6  // 4B
+#define LED_IR      PORTC6  // 3A
+#endif /* TRACKER_BOARD_REVISION */
 
 void led_init(void)
 {
+#if TRACKER_BOARD_REVISION == 2
     // set all used pins as outputs
     DDRC |= (1 << LED_GREEN);// | (1 << LED_IR);
     // we're sinking all LEDs into the pins, so set them high to turn off
@@ -29,6 +37,33 @@ void led_init(void)
     TCCR4B = (1 << DTPS41) | (1 << DTPS40) | (1 << CS40);
 //    TCCR4A = (1 << COM4A1) | (1 << PWM4A); // enable clear on match PWM for IR
     TCCR4C = (1 << COM4D1) | (1 << PWM4D); // enable clear on match PWM for red
+#elif TRACKER_BOARD_REVISION == 3
+    // set all used pins as outputs
+    DDRB |= (1 << LED_BLUE);
+    DDRC |= (1 << LED_GREEN) | (1 << LED_IR);
+    DDRD |= (1 << LED_RED);
+    // we're sinking all LEDs into the pins, so set them high to turn off
+    PORTB |= (1 << LED_BLUE);
+    PORTC |= (1 << LED_GREEN) | (1 << LED_IR);
+    PORTD |= (1 << LED_RED);
+    
+    // Timer 3 setup - clear on match PWM, clock/8
+//    OCR3A = 0xFF; // start IR at off
+//    TCCR3A = (1 << COM3A1) | (1 << WGM30);
+//    TCCR3B = (1 << WGM32) | (1 << CS31);
+    
+    // Timer 4 setup
+    OCR4C = 0xFF; // top at 256 counts
+    OCR4A = 0xFF; // start green at off
+    OCR4B = 0xFF; // start blue at off
+    OCR4D = 0xFF; // start red at off
+    // dead time at clock/8, pwm at full clock to maximize dead time length
+    TCCR4B = (1 << DTPS41) | (1 << DTPS40) | (1 << CS40);
+    // enable clear on match PWM for green and blue
+    TCCR4A = (1 << COM4A1) | (1 << PWM4A) | (1 << COM4B1) | (1 << PWM4B);
+    // enable clear on match PWM for red
+    TCCR4C = (1 << COM4D1) | (1 << PWM4D);
+#endif /* TRACKER_BOARD_REVISION */
 }
 
 void led_set_array(const unsigned char *rgb)
@@ -38,6 +73,7 @@ void led_set_array(const unsigned char *rgb)
 
 void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
 {
+#if TRACKER_BOARD_REVISION == 2
     OCR4D = 0xFF - red;
 
     OCR3A = 0xFF - green;
@@ -60,10 +96,17 @@ void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
             TCCR4C = (1 << COM4D0) | (1 << PWM4D); // enable inverted red and blue
         }
     }
+#elif TRACKER_BOARD_REVISION == 3
+    OCR4A = 0xFF - green;
+    OCR4B = 0xFF - blue;
+    OCR4D = 0xFF - red;
+#endif /* TRACKER_BOARD_REVISION */
 }
 
 void led_set_ir(unsigned char ir)
 {
-//    OCR4A = 0xFF - ir;
+#if TRACKER_BOARD_REVISION == 3
+    OCR3A = 0xFF - ir;
+#endif /* TRACKER_BOARD_REVISION */
 }
 

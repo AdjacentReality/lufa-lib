@@ -135,7 +135,7 @@ LUFA_OPTS += -D NO_INTERNAL_SERIAL
 LUFA_OPTS += -D NO_DEVICE_SELF_POWER
 LUFA_OPTS += -D NO_DEVICE_REMOTE_WAKEUP
 LUFA_OPTS += -D NO_SOF_EVENTS
-LUFA_OPTS += -D TRACKER_BOARD_REVISION=2
+LUFA_OPTS += -D TRACKER_BOARD_REVISION=3
 
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
@@ -356,7 +356,7 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = jtagmkII
+AVRDUDE_PROGRAMMER = avrisp2
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
 AVRDUDE_PORT = usb
