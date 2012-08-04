@@ -57,8 +57,8 @@ void led_init(void)
     OCR4A = 0xFF; // start green at off
     OCR4B = 0xFF; // start blue at off
     OCR4D = 0xFF; // start red at off
-    // dead time at clock/8, pwm at full clock to maximize dead time length
-    TCCR4B = (1 << DTPS41) | (1 << DTPS40) | (1 << CS40);
+    // pwm at full clock
+    TCCR4B = (1 << CS40);
     // enable clear on match PWM for green and blue
     TCCR4A = (1 << COM4A1) | (1 << PWM4A) | (1 << COM4B1) | (1 << PWM4B);
     // enable clear on match PWM for red
