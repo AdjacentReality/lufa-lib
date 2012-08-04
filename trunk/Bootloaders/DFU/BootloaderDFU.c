@@ -156,6 +156,13 @@ static void SetupHardware(void)
 	// Enable buck regulator 1
 	DDRB |= (1 << 6);
 	PORTB |= (1 << 6);
+#elif TRACKER_BOARD_REVISION == 3
+    // Set output pin for standby and buck regulator
+    DDRD |= (1 << 5) | (1 << 6);
+    // For now, disable standby
+    PORTD &= ~(1 << 6);
+    // Enable buck reg
+    PORTD |= (1 << 5);
 #endif
 
     // we're sinking all LEDs into the pins, so set them high to turn off

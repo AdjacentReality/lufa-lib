@@ -72,7 +72,7 @@ ARCH = AVR8
 # "Board" inside the application directory.
 BOARD = USER
 
-TRACKER_BOARD_REVISION = 2
+TRACKER_BOARD_REVISION = 3
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the
@@ -353,7 +353,7 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = jtagmkII
+AVRDUDE_PROGRAMMER = avrisp2
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
 AVRDUDE_PORT = usb

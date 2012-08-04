@@ -96,6 +96,10 @@ static inline void SetPower(bool power)
 	// Enable or disable buck regulator 1
 	PORTB = (PORTB & ~(1 << 6)) | (power << 6);
 #endif /* LTC3554 */
+
+#ifdef LTC3553
+    PORTD = (PORTD & ~(1 << 5)) | (power << 5);
+#endif /* LTC3553 */
 }
 
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
@@ -110,22 +114,30 @@ void SetupHardware(void)
 	
 	/* Hardware Initialization */
 	twi_init();
-	led_init();
-	gpio_init();
+//	led_init();
+//	gpio_init();
 	USB_Init();
 	uart_init(38400, false);
 	
 	// Set the 16 bit timer to increment at F_CPU/1024 Hz
 	TCCR1B = 0x05;
-	
+
+#ifdef LTC3554
 	// Set the battery charge current to 500mA
 	DDRB |= (1 << 7);
 	PORTB |= (1 << 7);
-	
-#ifdef LTC3554
+
 	// Set output pin for buck regulator 1
 	DDRB |= (1 << 6);
 #endif /* LTC3554 */
+
+#ifdef LTC3553
+    // Set output pin for standby and buck regulator
+    DDRD |= (1 << 5) | (1 << 6);
+    // For now, disable standby
+    PORTD &= ~(1 << 6);
+#endif /* LTC3553 */
+    
 	SetPower(1);
 }
 
