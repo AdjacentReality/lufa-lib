@@ -244,6 +244,10 @@ static void ParseByte(unsigned char c)
                 led_set_array(p.data.color);
                 break;
                 
+            case PACKET_IR:
+                led_set_ir(p.data.bitmask);
+                break;
+                
             case PACKET_STREAM:
                 streaming_mode = p.data.bitmask;
                 break;

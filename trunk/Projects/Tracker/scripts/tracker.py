@@ -113,6 +113,10 @@ class Tracker(object):
         packed = struct.pack('!BBBB', PACKET_COLOR, rgb[0], rgb[1], rgb[2])
         self.write_packet(packed)
         
+    def set_ir(self, ir):
+        packed = struct.pack('!BB', PACKET_IR, ir)
+        self.write_packet(packed)
+        
     def set_streaming_mode(self, quat, acc, gyro, mag, temperature, gpio):
         mask = (quat << PACKET_QUAT) | (acc << PACKET_ACC) | (gyro << PACKET_GYRO) |\
                 (mag << PACKET_MAG) | (temperature << PACKET_TEMPERATURE) | (gpio << PACKET_GPIO)

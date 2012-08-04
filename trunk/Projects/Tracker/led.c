@@ -48,9 +48,9 @@ void led_init(void)
     PORTD |= (1 << LED_RED);
     
     // Timer 3 setup - clear on match PWM, clock/8
-//    OCR3A = 0xFF; // start IR at off
-//    TCCR3A = (1 << COM3A1) | (1 << WGM30);
-//    TCCR3B = (1 << WGM32) | (1 << CS31);
+    OCR3A = 0xFF; // start IR at off
+    TCCR3A = (1 << COM3A1) | (1 << WGM30);
+    TCCR3B = (1 << WGM32) | (1 << CS31);
     
     // Timer 4 setup
     OCR4C = 0xFF; // top at 256 counts

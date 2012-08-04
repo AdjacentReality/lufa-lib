@@ -132,6 +132,7 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
         case PACKET_GPIO_PORT:
         case PACKET_POWER:
         case PACKET_STREAM:
+        case PACKET_IR:
             packet->data.bitmask = buf[1];
             break;
             
