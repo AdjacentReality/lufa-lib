@@ -92,14 +92,12 @@ bool useUSB = 0;
 
 static inline void SetPower(bool power)
 {
-#ifdef LTC3554
+#if TRACKER_BOARD_REVISION == 2
 	// Enable or disable buck regulator 1
 	PORTB = (PORTB & ~(1 << 6)) | (power << 6);
-#endif /* LTC3554 */
-
-#ifdef LTC3553
+#elif TRACKER_BOARD_REVISION == 3
     PORTD = (PORTD & ~(1 << 5)) | (power << 5);
-#endif /* LTC3553 */
+#endif /* TRACKER_BOARD_REVISION */
 }
 
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
@@ -122,21 +120,21 @@ void SetupHardware(void)
 	// Set the 16 bit timer to increment at F_CPU/1024 Hz
 	TCCR1B = 0x05;
 
-#ifdef LTC3554
+#if TRACKER_BOARD_REVISION == 2
+    // Setup LTC3554 charger/regulator
 	// Set the battery charge current to 500mA
 	DDRB |= (1 << 7);
 	PORTB |= (1 << 7);
 
 	// Set output pin for buck regulator 1
 	DDRB |= (1 << 6);
-#endif /* LTC3554 */
-
-#ifdef LTC3553
+#elif TRACKER_BOARD_REVISION == 3
+    // Setup LTC3553 charger/regulator
     // Set output pin for standby and buck regulator
     DDRD |= (1 << 5) | (1 << 6);
     // For now, disable standby
     PORTD &= ~(1 << 6);
-#endif /* LTC3553 */
+#endif /* TRACKER_BOARD_REVISION */
     
 	SetPower(1);
 }
