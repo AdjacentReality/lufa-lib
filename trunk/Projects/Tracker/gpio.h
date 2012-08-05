@@ -2,7 +2,7 @@
 #define _GPIO_H_
 
 // Disable JTAG so we can use all of PORT F
-#define gpio_init() MCUCR=0x80;MCUCR=0x80;
+#define gpio_init() JTAG_DISABLE()
 // We use PORT F exclusively for GPIO, so we can just directly use the registers
 #define gpio_set_ddr(x) (DDRF = x)
 #define gpio_set_port(x) (PORTF = x)

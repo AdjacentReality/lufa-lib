@@ -73,18 +73,24 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 		.Config =
 			{
 				.ControlInterfaceNumber         = 0,
-
-				.DataINEndpointNumber           = CDC_TX_EPNUM,
-				.DataINEndpointSize             = CDC_TXRX_EPSIZE,
-				.DataINEndpointDoubleBank       = false,
-
-				.DataOUTEndpointNumber          = CDC_RX_EPNUM,
-				.DataOUTEndpointSize            = CDC_TXRX_EPSIZE,
-				.DataOUTEndpointDoubleBank      = false,
-
-				.NotificationEndpointNumber     = CDC_NOTIFICATION_EPNUM,
-				.NotificationEndpointSize       = CDC_NOTIFICATION_EPSIZE,
-				.NotificationEndpointDoubleBank = false,
+				.DataINEndpoint                 =
+					{
+						.Address                = CDC_TX_EPADDR,
+						.Size                   = CDC_TXRX_EPSIZE,
+						.Banks                  = 1,
+					},
+				.DataOUTEndpoint                =
+					{
+						.Address                = CDC_RX_EPADDR,
+						.Size                   = CDC_TXRX_EPSIZE,
+						.Banks                  = 1,
+					},
+				.NotificationEndpoint           =
+					{
+						.Address                = CDC_NOTIFICATION_EPADDR,
+						.Size                   = CDC_NOTIFICATION_EPSIZE,
+						.Banks                  = 1,
+					},
 			},
 	};
 
@@ -149,6 +155,8 @@ static void SetupSensors(void)
 
 static void UpdateDemo(void)
 {
+// FIXME: Getting a linker error due to an AVR libc/libm/libgcc bug
+/*
     float qq2 = q2*q2;
     float roll = atan2f(2.0*(q0*q1+q2*q3), 1.0-2.0*(q1*q1+qq2));
     float rotation = atan2f(2.0*(q0*q3+q1*q2), 1.0-2.0*(qq2+q3*q3));
@@ -197,6 +205,7 @@ static void UpdateDemo(void)
     
     if (b < 64 && r < 192) b = 0;
     led_set_colors(r, g, b);
+*/
 }
 
 /** Main program entry point. This routine contains the overall program flow, including initial
