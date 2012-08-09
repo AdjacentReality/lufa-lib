@@ -59,10 +59,15 @@ static const unsigned char LEDMASK_USB_ERROR[3] = {255, 0, 0};
 
 // Default to streaming just quaternions
 static uint8_t streaming_mode = (1 << PACKET_QUAT);
-
 #define SHOULD_STREAM(m) (streaming_mode & (1 << m))
 
 static bool demo_mode = true;
+
+static bool useUSB = 0;
+
+uint32_t Boot_Key ATTR_NO_INIT;
+#define MAGIC_BOOT_KEY 0xDC42ACCA
+#define BOOTLOADER_START_ADDRESS ((unsigned int)((32-4)*1024))
 
 /** LUFA CDC Class driver interface configuration and state information. This structure is
  *  passed to all CDC Class driver functions, so that multiple instances of the same class
@@ -94,7 +99,31 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 			},
 	};
 
-bool useUSB = 0;
+// Jump to bootloader from software.  From the LUFA docs.
+void BootloaderJumpCheck(void) ATTR_INIT_SECTION(3);
+void BootloaderJumpCheck(void)
+{
+    // If the reset source was the bootloader and the key is correct, clear it and jump to the bootloader
+    if ((MCUSR & (1 << WDRF)) && (Boot_Key == MAGIC_BOOT_KEY))
+    {
+        Boot_Key = 0;
+        ((void (*)(void))BOOTLOADER_START_ADDRESS)();
+    }
+}
+
+void JumpToBootloader(void)
+{
+    // If USB is used, detach from the bus and reset it
+    USB_Disable();
+    // Disable all interrupts
+    cli();
+    // Wait two seconds for the USB detachment to register on the host
+    Delay_MS(2000);
+    // Set the bootloader key to the magic value and force a reset
+    Boot_Key = MAGIC_BOOT_KEY;
+    wdt_enable(WDTO_250MS);
+    for (;;);
+}
 
 static inline void SetPower(bool power)
 {
@@ -277,6 +306,11 @@ static void ParseByte(unsigned char c)
                 
             case PACKET_POWER:
                 SetPower(p.data.bitmask != 0);
+                break;
+                
+            case PACKET_BOOTLOAD:
+                led_set_colors(127, 0, 0);
+                JumpToBootloader();
                 break;
         }
     }

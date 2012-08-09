@@ -60,7 +60,7 @@ void led_init(void)
     // pwm at full clock
     TCCR4B = (1 << CS40);
     // enable clear on match PWM for green and blue
-    TCCR4A = (1 << COM4A1) | (1 << PWM4A) | (1 << COM4B1) | (1 << PWM4B);
+//    TCCR4A = (1 << COM4A1) | (1 << PWM4A) | (1 << COM4B1) | (1 << PWM4B);
     // enable clear on match PWM for red
     TCCR4C = (1 << COM4D1) | (1 << PWM4D);
 #endif /* TRACKER_BOARD_REVISION */
@@ -97,8 +97,10 @@ void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
         }
     }
 #elif TRACKER_BOARD_REVISION == 3
-    OCR4A = 0xFF - green;
-    OCR4B = 0xFF - blue;
+//    OCR4A = 0xFF - green;
+//    OCR4B = 0xFF - blue;
+    PORTB = (PORTB & ~(1 << LED_BLUE)) | ((blue == 0) << LED_BLUE);
+    PORTC = (PORTC & ~(1 << LED_GREEN)) | ((green == 0) << LED_GREEN);
     OCR4D = 0xFF - red;
 #endif /* TRACKER_BOARD_REVISION */
 }

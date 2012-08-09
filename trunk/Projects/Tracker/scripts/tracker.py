@@ -20,7 +20,8 @@ PACKET_CAL = 12
 PACKET_GPIO_DDR = 13
 PACKET_GPIO_PORT = 14
 PACKET_POWER = 15
-PACKET_MAX = 16
+PACKET_BOOTLOAD = 16
+PACKET_MAX = 17
 
 class Tracker(object):
     def __init__(self, port):
@@ -141,6 +142,10 @@ class Tracker(object):
         
     def set_power(self, power):
         packed = struct.pack('!BB', PACKET_POWER, power)
+        self.write_packet(packed)
+        
+    def bootload(self):
+        packed = struct.pack('!B', PACKET_BOOTLOAD)
         self.write_packet(packed)
         
     def close(self):

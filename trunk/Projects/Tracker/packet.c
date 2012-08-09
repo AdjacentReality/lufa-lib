@@ -25,7 +25,8 @@ const int const g_packet_size[PACKET_MAX] =
  1+6*sizeof(float),     // PACKET_CAL
  1+1,                   // PACKET_GPIO_DDR
  1+1,                   // PACKET_GPIO_PORT
- 1+1};                  // PACKET_POWER
+ 1+1,                   // PACKET_POWER
+ 1};                  // PACKET_BOOTLOAD
 
 int pack_seq(unsigned char *buf, int len, unsigned char *out)
 {
@@ -117,8 +118,9 @@ static bool packet_parse(packet_p packet, unsigned char *buf, int len)
         case PACKET_GPIO:
         case PACKET_VERSION:
         case PACKET_ID:
+        case PACKET_BOOTLOAD:
             // no payload on these when incoming, 
-            // just tells us we need to send this packet type back
+            // except bootload, just tells us we need to send this packet type back
             break;
     
         case PACKET_COLOR:
