@@ -57,6 +57,15 @@
 		/** Size in bytes of the CDC data IN and OUT endpoints. */
 		#define CDC_TXRX_EPSIZE                16
 
+		/** Endpoint address of the Tracker HID reporting IN endpoint. */
+		#define TRACKER_EPADDR                   (ENDPOINT_DIR_IN  | 1)
+
+		/** Size in bytes of the Tracker HID reporting IN endpoint. */
+		#define TRACKER_EPSIZE                   8
+		
+		/** Size in bytes of the Tracker HID report */
+		#define TRACKER_REPORT_SIZE              6
+
 	/* Type Defines: */
 		/** Type define for the device configuration descriptor structure. This must be defined in the
 		 *  application code, as the configuration descriptor contains several sub-descriptors which
@@ -77,6 +86,11 @@
 			USB_Descriptor_Interface_t               CDC_DCI_Interface;
 			USB_Descriptor_Endpoint_t                CDC_DataOutEndpoint;
 			USB_Descriptor_Endpoint_t                CDC_DataInEndpoint;
+			
+			// Tracker HID Interface
+			USB_Descriptor_Interface_t               HID_Interface;
+			USB_HID_Descriptor_HID_t                 HID_TrackerHID;
+	        USB_Descriptor_Endpoint_t                HID_ReportINEndpoint;
 		} USB_Descriptor_Configuration_t;
 
 	/* Function Prototypes: */
@@ -86,5 +100,4 @@
 		                                    ATTR_WARN_UNUSED_RESULT ATTR_NON_NULL_PTR_ARG(3);
 
 #endif
-
 

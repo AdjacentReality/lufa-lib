@@ -57,8 +57,8 @@ static const unsigned char LEDMASK_USB_READY[3] = {0, 255, 0};
 /** LED mask for the library LED driver, to indicate that an error has occurred in the USB interface. */
 static const unsigned char LEDMASK_USB_ERROR[3] = {255, 0, 0};
 
-// Default to streaming just quaternions
-static uint8_t streaming_mode = (1 << PACKET_QUAT);
+// Default to streaming nothing
+static uint8_t streaming_mode = 0;
 #define SHOULD_STREAM(m) (streaming_mode & (1 << m))
 
 static bool demo_mode = true;
@@ -96,6 +96,29 @@ USB_ClassInfo_CDC_Device_t Tracker_CDC_Interface =
 						.Size                   = CDC_NOTIFICATION_EPSIZE,
 						.Banks                  = 1,
 					},
+			},
+	};
+
+/** Buffer to hold the previously generated HID report, for comparison purposes inside the HID class driver. */
+static uint8_t PrevHIDReportBuffer[TRACKER_REPORT_SIZE];
+
+/** LUFA HID Class driver interface configuration and state information. This structure is
+ *  passed to all HID Class driver functions, so that multiple instances of the same class
+ *  within a device can be differentiated from one another.
+ */
+USB_ClassInfo_HID_Device_t Tracker_HID_Interface =
+	{
+		.Config =
+			{
+				.InterfaceNumber              = 2,
+				.ReportINEndpoint             =
+					{
+						.Address              = TRACKER_EPADDR,
+						.Size                 = TRACKER_EPSIZE,
+						.Banks                = 1,
+					},
+				.PrevReportINBuffer           = PrevHIDReportBuffer,
+				.PrevReportINBufferSize       = sizeof(PrevHIDReportBuffer),
 			},
 	};
 
@@ -264,6 +287,7 @@ int main(void)
     		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
 
 		CDC_Device_USBTask(&Tracker_CDC_Interface);
+		HID_Device_USBTask(&Tracker_HID_Interface);
 		USB_USBTask();
 	}
 }
@@ -448,6 +472,9 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	bool ConfigSuccess = true;
 
 	ConfigSuccess &= CDC_Device_ConfigureEndpoints(&Tracker_CDC_Interface);
+	ConfigSuccess &= HID_Device_ConfigureEndpoints(&Tracker_HID_Interface);
+
+	USB_Device_EnableSOFEvents();
 
 	led_set_array(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
 	useUSB = ConfigSuccess;
@@ -458,5 +485,55 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 void EVENT_USB_Device_ControlRequest(void)
 {
 	CDC_Device_ProcessControlRequest(&Tracker_CDC_Interface);
+	HID_Device_ProcessControlRequest(&Tracker_HID_Interface);
+}
+
+/** Event handler for the USB device Start Of Frame event. */
+void EVENT_USB_Device_StartOfFrame(void)
+{
+	HID_Device_MillisecondElapsed(&Tracker_HID_Interface);
+}
+
+/** HID class driver callback function for the creation of HID reports to the host.
+ *
+ *  \param[in]     HIDInterfaceInfo  Pointer to the HID class interface configuration structure being referenced
+ *  \param[in,out] ReportID    Report ID requested by the host if non-zero, otherwise callback should set to the generated report ID
+ *  \param[in]     ReportType  Type of the report to create, either HID_REPORT_ITEM_In or HID_REPORT_ITEM_Feature
+ *  \param[out]    ReportData  Pointer to a buffer where the created report should be stored
+ *  \param[out]    ReportSize  Number of bytes written in the report (or zero if no report is to be sent)
+ *
+ *  \return Boolean true to force the sending of the report, false to let the library determine if it needs to be sent
+ */
+bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDInterfaceInfo,
+                                         uint8_t* const ReportID,
+                                         const uint8_t ReportType,
+                                         void* ReportData,
+                                         uint16_t* const ReportSize)
+{
+	short* Data = (short*)ReportData;
+    
+    Data[0] = cpu_to_le16(g[0]);
+    Data[1] = cpu_to_le16(g[1]);
+    Data[2] = cpu_to_le16(g[2]);
+    
+	*ReportSize = TRACKER_REPORT_SIZE;
+	return false;
+}
+
+/** HID class driver callback function for the processing of HID reports from the host.
+ *
+ *  \param[in] HIDInterfaceInfo  Pointer to the HID class interface configuration structure being referenced
+ *  \param[in] ReportID    Report ID of the received report from the host
+ *  \param[in] ReportType  The type of report that the host has sent, either HID_REPORT_ITEM_Out or HID_REPORT_ITEM_Feature
+ *  \param[in] ReportData  Pointer to a buffer where the received report has been stored
+ *  \param[in] ReportSize  Size in bytes of the received HID report
+ */
+void CALLBACK_HID_Device_ProcessHIDReport(USB_ClassInfo_HID_Device_t* const HIDInterfaceInfo,
+                                          const uint8_t ReportID,
+                                          const uint8_t ReportType,
+                                          const void* ReportData,
+                                          const uint16_t ReportSize)
+{
+	// Unused (but mandatory for the HID class driver) in this demo, since there are no Host->Device reports
 }
 
