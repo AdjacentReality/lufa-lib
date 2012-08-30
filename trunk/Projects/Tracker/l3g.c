@@ -8,7 +8,7 @@ void l3g_init(void){
 	//We will set 5 contiguous ctrl registers located at CTRL_REG1
 	buf[0] = L3G_AUTO_INCREMENT | L3G_CTRL_REG1;
 	
-	buf[1] = L3G_DR_200HZ |	// Data rate
+	buf[1] = L3G_DR_800HZ |	// Data rate
 			 L3G_PD |			// Power on
 			 L3G_ZEN |			// Z-Axis on
 			 L3G_YEN |			// Y-Axis on 	

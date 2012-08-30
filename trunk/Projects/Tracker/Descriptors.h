@@ -61,10 +61,10 @@
 		#define TRACKER_EPADDR                   (ENDPOINT_DIR_IN  | 1)
 
 		/** Size in bytes of the Tracker HID reporting IN endpoint. */
-		#define TRACKER_EPSIZE                   8
+		#define TRACKER_EPSIZE                   32
 		
 		/** Size in bytes of the Tracker HID report */
-		#define TRACKER_REPORT_SIZE              6
+		#define TRACKER_REPORT_SIZE              18
 
 	/* Type Defines: */
 		/** Type define for the device configuration descriptor structure. This must be defined in the

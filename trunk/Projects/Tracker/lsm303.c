@@ -22,7 +22,7 @@ void lsm303_init(void){
 			 LSM303_BDU_A;			// Block updates during H/L byte read
 	buf[5] = 0x00;						// CTRL_REG5
 #elif defined LSM303DLHC
-	buf[1] = LSM303_DR_200HZ_A |		// Data rate          CTRL_REG1
+	buf[1] = LSM303_DR_400HZ_A |		// Data rate          CTRL_REG1
 			 LSM303_ZEN_A |			// Z-Axis on
 			 LSM303_YEN_A |			// Y-Axis on
 			 LSM303_XEN_A;			// X-Axis on

@@ -512,9 +512,15 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
 {
 	short* Data = (short*)ReportData;
     
-    Data[0] = cpu_to_le16(g[0]);
-    Data[1] = cpu_to_le16(g[1]);
-    Data[2] = cpu_to_le16(g[2]);
+    Data[0] = cpu_to_le16(a[0]);
+    Data[1] = cpu_to_le16(a[1]);
+    Data[2] = cpu_to_le16(a[2]);
+    Data[3] = cpu_to_le16(g[0]);
+    Data[4] = cpu_to_le16(g[1]);
+    Data[5] = cpu_to_le16(g[2]);
+    Data[6] = cpu_to_le16(m[0]);
+    Data[7] = cpu_to_le16(m[1]);
+    Data[8] = cpu_to_le16(m[2]);
     
 	*ReportSize = TRACKER_REPORT_SIZE;
 	return false;
