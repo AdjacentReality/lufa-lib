@@ -510,17 +510,24 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
                                          void* ReportData,
                                          uint16_t* const ReportSize)
 {
-	short* Data = (short*)ReportData;
+	short *sData = (short *)ReportData;
+	unsigned char *bData = (unsigned char *)ReportData;
     
-    Data[0] = cpu_to_le16(a[0]);
-    Data[1] = cpu_to_le16(a[1]);
-    Data[2] = cpu_to_le16(a[2]);
-    Data[3] = cpu_to_le16(g[0]);
-    Data[4] = cpu_to_le16(g[1]);
-    Data[5] = cpu_to_le16(g[2]);
-    Data[6] = cpu_to_le16(m[0]);
-    Data[7] = cpu_to_le16(m[1]);
-    Data[8] = cpu_to_le16(m[2]);
+    // Both avr-libc and USB are little endian, so this is a no-op.
+    sData[0] = cpu_to_le16(g[0]);
+    sData[1] = cpu_to_le16(g[1]);
+    sData[2] = cpu_to_le16(g[2]);
+    // Can get away with not doing endianness conversion here, but remember to do it on other platforms.
+    // The accelerometer is 12-bit high aligned, magnetometer is 12 bit low aligned
+    bData[6] = (a[0] >> 8);
+    bData[7] = (a[0] & 0xF0) | ((a[1] >> 12) & 0x0F);
+    bData[8] = (a[1] >> 4);
+    bData[9] = (a[2] >> 8);
+    bData[10] = (a[2] & 0xF0) | ((m[0] >> 8) & 0x0F);
+    bData[11] = m[0];
+    bData[12] = m[1] >> 4;
+    bData[13] = (m[1] << 4) | ((m[2] >> 8) & 0x0F);
+    bData[14] = m[2];
     
 	*ReportSize = TRACKER_REPORT_SIZE;
 	return false;
