@@ -158,9 +158,6 @@ void SetupHardware(void)
 //	gpio_init();
 	USB_Init();
 	uart_init(38400, false);
-	
-	// Set the 16 bit timer to increment at F_CPU/1024 Hz
-	TCCR1B = 0x05;
 }
 
 /** Main program entry point. This routine contains the overall program flow, including initial

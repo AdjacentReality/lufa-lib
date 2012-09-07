@@ -12,6 +12,10 @@
 #define LED_GREEN   PORTC7  // 4A
 #define LED_BLUE    PORTB6  // 4B
 #define LED_IR      PORTC6  // 3A
+#elif TRACKER_BASE_STATION
+#define LED_RED     PORTB7  // 1C
+#define LED_GREEN   PORTC5  // 1B
+#define LED_BLUE    PORTC6  // 1A
 #endif /* TRACKER_BOARD_REVISION */
 
 void led_init(void)
@@ -63,6 +67,22 @@ void led_init(void)
 //    TCCR4A = (1 << COM4A1) | (1 << PWM4A) | (1 << COM4B1) | (1 << PWM4B);
     // enable clear on match PWM for red
     TCCR4C = (1 << COM4D1) | (1 << PWM4D);
+#elif TRACKER_BASE_STATION
+    // set all used pins as outputs
+    DDRC |= (1 << LED_GREEN) | (1 << LED_BLUE);
+    DDRB |= (1 << LED_RED);
+    // we're sinking all LEDs into the pins, so set them high to turn off
+    PORTC |= (1 << LED_GREEN) | (1 << LED_BLUE);
+    PORTB |= (1 << LED_RED);
+    
+    // start with all off
+    OCR1A = 0xFF;
+    OCR1B = 0xFF;
+    OCR1C = 0xFF;
+    
+     // clear on compare match on A, B, and C
+    TCCR1A = (1 << 7) | (1 << 5) | (1 << 3) | 1;
+    TCCR1B = (1 << 3) | 1; // 8-bit PWM, run at full clock
 #endif /* TRACKER_BOARD_REVISION */
 }
 
@@ -102,6 +122,10 @@ void led_set_colors(unsigned char red, unsigned char green, unsigned char blue)
     PORTB = (PORTB & ~(1 << LED_BLUE)) | ((blue == 0) << LED_BLUE);
     PORTC = (PORTC & ~(1 << LED_GREEN)) | ((green == 0) << LED_GREEN);
     OCR4D = 0xFF - red;
+#elif TRACKER_BASE_STATION
+    OCR1A = 0xFF - blue;
+    OCR1B = 0xFF - green;
+    OCR1C = 0xFF - red;
 #endif /* TRACKER_BOARD_REVISION */
 }
 
