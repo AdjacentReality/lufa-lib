@@ -36,7 +36,15 @@
 #define  INCLUDE_FROM_BOOTLOADER_C
 #include "BootloaderDFU.h"
 
+#if TRACKER_BOARD_REVISION
 #define LED_RED     PORTD7  // 4D
+#define LED_DDR     DDRD
+#define LED_PORT    PORTD
+#else // TRACKER_BASE_STATION
+#define LED_RED     PORTB7
+#define LED_DDR     DDRB
+#define LED_PORT    PORTB
+#endif
 
 /** Flag to indicate if the bootloader is currently running in secure mode, disallowing memory operations
  *  other than erase. This is initially set to the value set by SECURE_MODE, and cleared by the bootloader
@@ -154,7 +162,7 @@ int main(void)
 	SetupHardware();
 
 	/* Turn on first LED on the board to indicate that the bootloader has started */
-	PORTD ^= (1 << LED_RED);
+	LED_PORT ^= (1 << LED_RED);
 
 	/* Enable global interrupts so that the USB stack can function */
 	sei();
@@ -198,8 +206,8 @@ static void SetupHardware(void)
 #endif
 
     // we're sinking all LEDs into the pins, so set them high to turn off
-    DDRD |= (1 << LED_RED);
-    PORTD |= (1 << LED_RED);
+    LED_DDR |= (1 << LED_RED);
+    LED_PORT |= (1 << LED_RED);
 
 	/* Initialize the USB and other board hardware drivers */
 	USB_Init();
@@ -228,7 +236,7 @@ static void ResetHardware(void)
 /** ISR to periodically toggle the LEDs on the board to indicate that the bootloader is active. */
 ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
-	PORTD ^= (1 << LED_RED);
+	LED_PORT ^= (1 << LED_RED);
 }
 
 /** Event handler for the USB_ControlRequest event. This is used to catch and process control requests sent to
@@ -245,7 +253,7 @@ void EVENT_USB_Device_ControlRequest(void)
 	}
 
 	/* Activity - toggle indicator LEDs */
-	PORTD ^= (1 << LED_RED);
+	LED_PORT ^= (1 << LED_RED);
 
 	/* Get the size of the command and data from the wLength value */
 	SentCommand.DataSize = USB_ControlRequest.wLength;
