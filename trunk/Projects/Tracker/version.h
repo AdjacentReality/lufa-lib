@@ -7,6 +7,7 @@
 #define LSM303DLHC
 #elif TRACKER_BOARD_REVISION == 3
 #define LSM303DLHC
+#elif TRACKER_BASE_STATION
 #else
 #error Need to define a TRACKER_BOARD_REVISION
 #endif
