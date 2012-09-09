@@ -25,6 +25,7 @@ SRC          = $(TARGET).c                                                 \
                MadgwickAHRS.c                                              \
                packet.c                                                    \
                uart.c                                                      \
+               nrf.c                                                       \
                calibration.c                                               \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS)

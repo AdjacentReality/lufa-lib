@@ -44,6 +44,8 @@
 #include "uart.h"
 #include "calibration.h"
 #include "gpio.h"
+#include "nrf.h"
+#include <LUFA/Drivers/Peripheral/SPI.h>
 
 /** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
 static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
@@ -174,6 +176,12 @@ void SetupHardware(void)
 //	gpio_init();
 	USB_Init();
 	uart_init(38400, false);
+	
+#if TRACKER_BOARD_REVISION == 3
+	// Use 4 Mhz and the settings that the nRF24L01+ wants
+	SPI_Init(SPI_SPEED_FCPU_DIV_2 | SPI_ORDER_MSB_FIRST | SPI_SCK_LEAD_RISING | SPI_SAMPLE_LEADING | SPI_MODE_MASTER);
+	nrf_init();
+#endif
 	
 	// Set the 16 bit timer to increment at F_CPU/1024 Hz
 	TCCR1B = 0x05;
