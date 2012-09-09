@@ -180,7 +180,7 @@ void SetupHardware(void)
 #if TRACKER_BOARD_REVISION == 3
 	// Use 4 Mhz and the settings that the nRF24L01+ wants
 	SPI_Init(SPI_SPEED_FCPU_DIV_2 | SPI_ORDER_MSB_FIRST | SPI_SCK_LEAD_RISING | SPI_SAMPLE_LEADING | SPI_MODE_MASTER);
-	nrf_init();
+	nrf_init(0);
 #endif
 	
 	// Set the 16 bit timer to increment at F_CPU/1024 Hz

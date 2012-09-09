@@ -156,7 +156,7 @@ void SetupHardware(void)
 	USB_Init();
 	// Use 8 Mhz and the settings that the nRF24L01+ wants
 	SPI_Init(SPI_SPEED_FCPU_DIV_2 | SPI_ORDER_MSB_FIRST | SPI_SCK_LEAD_RISING | SPI_SAMPLE_LEADING | SPI_MODE_MASTER);
-	nrf_init();
+	nrf_init(1);
 }
 
 /** Main program entry point. This routine contains the overall program flow, including initial
