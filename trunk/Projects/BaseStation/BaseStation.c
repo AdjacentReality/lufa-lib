@@ -37,8 +37,9 @@
 #include "version.h"
 #include "led.h"
 #include "packet.h"
-#include "uart.h"
 #include "gpio.h"
+#include "nrf.h"
+#include <LUFA/Drivers/Peripheral/SPI.h>
 
 /** LED mask for the library LED driver, to indicate that the USB interface is not ready. */
 static const unsigned char LEDMASK_USB_NOTREADY[3] = {255, 0, 0};
@@ -55,10 +56,6 @@ static const unsigned char LEDMASK_USB_ERROR[3] = {255, 0, 0};
 // Default to streaming nothing
 static uint8_t streaming_mode = 0;
 #define SHOULD_STREAM(m) (streaming_mode & (1 << m))
-
-static bool demo_mode = true;
-
-static bool useUSB = 0;
 
 uint32_t Boot_Key ATTR_NO_INIT;
 #define MAGIC_BOOT_KEY 0xDC42ACCA
@@ -157,7 +154,9 @@ void SetupHardware(void)
 	led_init();
 //	gpio_init();
 	USB_Init();
-	uart_init(38400, false);
+	// Use 8 Mhz and the settings that the nRF24L01+ wants
+	SPI_Init(SPI_SPEED_FCPU_DIV_2 | SPI_ORDER_MSB_FIRST | SPI_SCK_LEAD_RISING | SPI_SAMPLE_LEADING | SPI_MODE_MASTER);
+	nrf_init();
 }
 
 /** Main program entry point. This routine contains the overall program flow, including initial
@@ -176,10 +175,6 @@ int main(void)
 	{
 	    ReadData();
 		SendData();
-        
-        /* Must throw away unused bytes from the host, or it will lock up while waiting for the device */
-        if (!useUSB) // we otherwise grab bytes in ReadData if we are using USB
-    		CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
 
 		CDC_Device_USBTask(&Tracker_CDC_Interface);
 		HID_Device_USBTask(&Tracker_HID_Interface);
@@ -192,8 +187,6 @@ static void ParseByte(unsigned char c)
     packet_t p;
     // use the packets as they complete
     if (packet_unpack(&p, c)) {
-        // exit demo mode if we get a packet
-        demo_mode = false;
         switch(p.type) {
             // TODO: the rest of the packet types
         
@@ -227,24 +220,14 @@ static void ParseByte(unsigned char c)
 
 void ReadData(void)
 {
-    if (useUSB) {
-        int to_read = CDC_Device_BytesReceived(&Tracker_CDC_Interface);
-        if (to_read > 0) {
-            while (to_read--) {
-                int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
-                if (in_byte >= 0)
-                    ParseByte(in_byte);
-                else
-                    break; // stop if we fail to read a byte
-            }
-        }
-    } else {
-        while (1) {
-            int16_t in_byte = uart_getc();
+    int to_read = CDC_Device_BytesReceived(&Tracker_CDC_Interface);
+    if (to_read > 0) {
+        while (to_read--) {
+            int16_t in_byte = CDC_Device_ReceiveByte(&Tracker_CDC_Interface);
             if (in_byte >= 0)
                 ParseByte(in_byte);
             else
-                break;
+                break; // stop if we fail to read a byte
         }
     }
 }
@@ -258,10 +241,7 @@ static void PackAndSend(packet_p p)
 {
     unsigned char buf[PACKET_MAX_SIZE];
     int packed_size = packet_pack(p, buf);
-    if (useUSB)
-        CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
-    else
-        uart_send(buf, packed_size);
+    CDC_Device_SendData(&Tracker_CDC_Interface, (const char const *)buf, packed_size);
 }
 
 void SendData(void)
@@ -311,7 +291,6 @@ void EVENT_USB_Device_Connect(void)
 void EVENT_USB_Device_Disconnect(void)
 {
 	led_set_array(LEDMASK_USB_NOTREADY);
-	useUSB = 0;
 }
 
 /** Event handler for the library USB Configuration Changed event. */
@@ -325,8 +304,6 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	USB_Device_EnableSOFEvents();
 
 	led_set_array(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
-	useUSB = ConfigSuccess;
-    if (ConfigSuccess) demo_mode = false;
 }
 
 /** Event handler for the library USB Control Request reception event. */
@@ -378,7 +355,7 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
     bData[14] = m[2];
     
 	*ReportSize = TRACKER_REPORT_SIZE;
-	return false;
+	return true;
 }
 
 /** HID class driver callback function for the processing of HID reports from the host.

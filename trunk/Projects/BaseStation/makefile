@@ -19,9 +19,9 @@ TARGET       = BaseStation
 TRACKER_PATH  = ../Tracker
 SRC          = $(TARGET).c                                                 \
 	           Descriptors.c                                               \
-	           $(TRACKER_PATH)/led.c                                            \
-               $(TRACKER_PATH)/packet.c                                         \
-               $(TRACKER_PATH)/uart.c                                           \
+	           $(TRACKER_PATH)/led.c                                       \
+               $(TRACKER_PATH)/packet.c                                    \
+               $(TRACKER_PATH)/nrf.c                                       \
 	           $(LUFA_SRC_USB)                                             \
 	           $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = ../../LUFA
